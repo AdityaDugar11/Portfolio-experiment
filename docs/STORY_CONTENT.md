@@ -155,7 +155,7 @@ Together, they reflect an evolving journey of learning through building.
 
 **SELECTED WORK — LIVE FROM MY GITHUB PROFILE**
 
-Display exclusively public repositories pinned by AdityaDugar11. Project cards should be populated from verified pinned repositories and follow the same ordering as the profile. If the pinned-repository API cannot be accessed, explain the limitation and use a manually verified fallback. Never silently substitute unrelated repositories.
+Display ONLY public repositories pinned by AdityaDugar11 via GitHub GraphQL. Project cards must be populated dynamically from verified pinned repositories and preserve the exact order returned by GitHub. Never insert unpinned repositories as fallback content, and never hardcode the old six-project catalogue. Handle loading, empty results, and API errors properly. Make the showcase feel like a premium digital gallery with attractive imagery, distinctive card compositions and thoughtful interactions.
 
 # CHAPTER 07 — ENGINEERING WITH OTHERS
 ### BUILDING SOFTWARE CHANGES WHEN IT BECOMES A SHARED RESPONSIBILITY.

@@ -1,26 +1,47 @@
-# Audio Decision
+# Audio Decision — The Living Signal
 
-## Current decision: no background track
+## Current Status: Site is 100% Silent
 
-The previous implementation sounded distorted/crackly and had a bug that caused sound to turn back on after being disabled. Remove or disable that implementation. Do not reuse the previously supplied YouTube track.
+Per `MASTER_CREATIVE_BRIEF.md` (Section 8) and explicit owner instructions:
+- The previous distorted/crackling audio implementation has been permanently removed.
+- The previously supplied YouTube track is permanently rejected.
+- Until an approved, properly licensed replacement track is chosen:
+  - The website remains completely silent.
+  - No audio files will be loaded or fetched.
+  - No audio context will autoplay.
+  - Page load, navigation, scroll, and component rerenders will never trigger sound.
+  - The visible sound toggle shown in the master storyboard will be rendered in a muted/inactive state.
 
-Until the owner explicitly selects a replacement:
-- The site is silent.
-- No audio is loaded for autoplay.
-- No audio starts on page load.
-- Scrolling never enables audio.
-- Navigation never enables audio.
-- React rerenders never enable audio.
-- Do not show a toggle implying audio is playing when no track has been selected.
+---
 
-## Desired direction
+## Desired Musical & Sound Direction
 
-The owner wants a sweet, warm, gentle and tasteful instrumental lo-fi/ambient track with subtle cinematic quality, no vocals, soft dynamics, no crackling/clipping and no harsh percussion.
+- **Style**: Sweet, warm, gentle, and tasteful instrumental lo-fi / ambient track with subtle cinematic depth.
+- **Strict Audio Constraints**:
+  - ❌ No vocals.
+  - ❌ No lyrics.
+  - ❌ No spoken narration.
+  - ❌ No harsh percussion, clipping, or crackling.
+  - Soft, atmospheric textures that enhance the visual storytelling without overwhelming it.
 
-## Selection process
+---
 
-Before integrating audio, provide three candidate tracks with direct listening links, exact track/artist, licence and attribution conditions, whether commercial/personal portfolio use is allowed, and whether local hosting/embedding is permitted. Do not rip, download or extract audio from YouTube or streaming platforms. Do not claim a licence without checking it. Wait for explicit owner selection.
+## Selection & Licensing Protocol
 
-## Future playback requirements
+1. Provide three vetted candidate tracks with:
+   - Direct listening preview links.
+   - Exact track name, artist, and composer.
+   - Clear commercial/personal portfolio licensing and attribution requirements.
+   - Verified local hosting / streaming rights.
+2. No ripping or downloading from YouTube or unlicensed streaming platforms.
+3. Audio integration will occur only after explicit owner review and selection.
 
-When a track is approved: default OFF; playback starts only after explicit user action; ON/OFF state cannot be reset by scroll or rerender; smooth volume ramp; one persistent audio instance; no restart at chapter transitions; gracefully handle playback rejection and loading errors; accurately reflect playback state.
+---
+
+## Future Playback Architecture (Post-Approval)
+
+- **Default State**: MUTED (sound toggle visible in top nav bar per master storyboard).
+- **User-Initiated Activation**: Sound plays only after an explicit click on the sound toggle.
+- **Volume Ramping**: Smooth logarithmic fade-in (e.g. 1.2s ramp) on play, smooth fade-out on pause.
+- **Persistence**: Single audio controller across all chapters and sequence transitions (no restarting or resetting state during scrolling).
+- **Silent Degradation**: Graceful error handling if autoplay policy blocks playback or audio fails to load.

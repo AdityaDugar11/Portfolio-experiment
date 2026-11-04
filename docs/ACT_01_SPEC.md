@@ -1,71 +1,90 @@
 # Act 01 — The Beginning: Detailed Specification
 
-## Purpose
+## Purpose & Master Reference
 
-Act 01 introduces Aditya, then transforms the introductory composition into a visual map of five technical interests. The story progression is: identity → portrait focus → orbital system → connected topics.
+Act 01 introduces Aditya Dugar, then transforms the opening composition through a 5-stage scroll sequence into a visual map of five connected technical topics.
 
-The approved second storyboard is the visual target. Recreate its intent, not its exact pixels.
+The master reference is:
+**[`docs/reference/act-01-master-storyboard.png`](reference/act-01-master-storyboard.png)**
 
-## Stage A — Initial introduction (0–20%)
+---
 
-Show the navigation/header, discipline eyebrow, “Aditya Dugar”, quote “I follow questions until they become something I can build.”, short introduction, Initiate Inquiry and Explore Portfolio actions, portrait, and atmospheric cloud environment.
+## The 5-Stage Scroll Sequence
 
-The text and portrait must be balanced and must not overlap. Keep the portrait proportionate. The environment must have depth and visible cloud character. Rings and topic cards must not dominate this first state.
+### Stage A — Initial View (0–20% Scroll Progress)
+- **Visual Composition**:
+  - Full scenic composition: sunset over a serene lake, lakeside palace skyline, reflections in the water, and birds in flight.
+  - Red-sandstone haveli archway on the left draped with blooming pink/magenta bougainvillea vines.
+  - Realistic human portrait of Aditya in a black shirt, warm sunset lighting, positioned at center-right.
+  - Floating holographic technical elements: glowing `AI` processor chip, luminous `</>` code card, translucent Linux penguin badge, and 3D server rack tower.
+  - Subtle initial orbital curves with warm coral/peach glow.
+- **UI & Typography Layer**:
+  - **Top Navigation Bar**: Logo `AD` with warm orange accent line; navigation links `WORK`, `SYSTEMS`, `JOURNEY`, `CONTACT`; sound toggle icon (muted by default); action button `GET IN TOUCH ↗`.
+  - **Hero Editorial Block**:
+    - Eyebrow: `SOFTWARE ENGINEERING · AI · INTELLIGENT SYSTEMS`
+    - Display Headline: **Aditya Dugar** (expressive serif typography)
+    - Quote: *“I follow questions until they become something I can build.”*
+    - Narrative Copy: *“Exploring intelligent systems, software engineering, automation and creative technology.”*
+    - Primary CTA: `Explore My Work →` (smoothly navigates to Chapter 06 Selected Work gallery)
+    - Secondary CTA: `The Journey ↗` (smoothly initiates narrative scroll into Stage B)
+  - **Right Scroll Indicator**: `01 THE BEGINNING`, vertical timeline progress bar, mouse scroll indicator.
 
-## Stage B — Transition (20–40%)
+### Stage B — Scrolling Begins (20–40% Scroll Progress)
+- Hero editorial text, action buttons, and header smoothly fade and exit the viewport.
+- Complete cleanup: zero text ghosting behind subsequent visual layers.
+- Portrait smoothly translates towards center and scales to become the central anchor of the composition.
+- The first faint orbital ring begins to trace its path around Aditya.
 
-As the visitor scrolls, the header fades/moves out, name/quote/description/buttons disappear, portrait moves towards the centre and scales to fit, and the first faint orbital curve starts to draw. Do not leave ghosted introductory text behind the portrait.
+### Stage C — Transformation (40–60% Scroll Progress)
+- Additional 3D elliptical and curved orbital paths progressively draw into view at varied orientations and depths.
+- Small luminous connection nodes travel along the paths with restrained coral and peach illumination.
+- The orbital rings form an integrated, harmonious system that highlights the portrait without obscuring Aditya's face.
 
-## Stage C — Orbital formation (40–60%)
+### Stage D — Connections (60–80% Scroll Progress)
+- Five topic cards appear sequentially around the orbital structure:
+  1. `</>` **Software Engineering** — Building software, architecture and practical applications.
+  2. Brain/chip **AI & Local LLMs** — Local inference, model experimentation and intelligent systems.
+  3. Layered nodes **Autonomous Agents** — Agents, tool use, automation and multi-agent workflows.
+  4. CPU chip **Linux & System Design** — Linux environments, infrastructure and system-level experimentation.
+  5. Play/cursor **Creative Technology** — ComfyUI, generative workflows, GPU computing and interactive experiences.
+- Animated 1px glowing vector connectors progressively draw from travelling orbital nodes to dock into their respective topic cards.
+- Cards are styled as refined luminous information nodes (subdued backplates, subtle coral edge glow, crisp typography) rather than generic glass widgets.
 
-Additional elliptical and curved paths form around the portrait at varied orientations and depths. Animate path drawing progressively from scroll progress. Small connection nodes travel along the paths. Lines use restrained coral/peach illumination. Rings must feel like one designed system, not random lines or identical flat circles. Do not obscure the face.
+### Stage E — Discovery State (80–100% Scroll Progress)
+- All five topic cards are visible, fully connected, and balanced cleanly around the central portrait.
+- The complete portrait remains visible and proportionate (not over-cropped).
+- Background sunset lake atmosphere and haveli archway remain visible with soft atmospheric depth.
+- Header remains hidden; text is high-contrast and fully readable.
+- Seamless reverse scrolling restores earlier states deterministically.
 
-## Stage D — Topic reveals (60–85%)
+---
 
-Reveal five cards progressively, not all at once:
+## Action & Button Specifications
 
-1. **Software Engineering** — Building software, architecture and practical applications.
-2. **AI & Local LLMs** — Local inference, model experimentation and intelligent systems.
-3. **Autonomous Agents** — Agents, tool use, automation and multi-agent workflows.
-4. **Linux & System Design** — Linux environments, infrastructure and system-level experimentation.
-5. **Creative Technology** — ComfyUI, generative workflows, GPU computing and interactive experiences.
+| Control | Target / Action | Implementation Detail |
+| :--- | :--- | :--- |
+| **`Explore My Work →`** | Chapter 06 (Selected Work) | Smooth scroll to the dynamic GitHub pinned repository showcase |
+| **`The Journey ↗`** | Act 01 Stage B (Narrative) | Smooth scroll initiating Stage B transition and orbital formation |
+| **`Get in Touch ↗` / `Initiate Inquiry`** | Contact Modal | Opens accessible modal dialog; traps focus, locks background scroll |
+| **Sound Toggle** | Audio Controller | Toggles audio state; default MUTED; smooth volume fade |
 
-Each card has a clear icon, topic title, short accurate description and connector visibly attached to a deliberate point on the orbital system. Cards should feel integrated into the cinematic scene, with readable contrast and deliberate spacing—not like generic dashboard widgets.
+---
 
-## Stage E — Final discovery (85–100%)
+## Modal Requirements
 
-Show the complete portrait, centrally positioned and not excessively large; keep the cloud environment visible; fully form the orbital system; show all five cards and their connections; keep text readable; hide the header; avoid clipping and overlap.
+- Accessible HTML `<dialog>` or ARIA-compliant modal overlay.
+- Closes via `Escape` key, visible close `✕` button, or backdrop click.
+- Focus is trapped within modal while open and restored to triggering button on close.
+- Background scroll locked while open.
+- Contact endpoints: `adityadugar7@gmail.com` and `https://www.linkedin.com/in/adityadugar11/`.
 
-## Scroll mechanics
+---
 
-- One coherent chapter timeline, mapped to scroll progress.
-- Slow, fast and reverse scrolling must work.
-- No arbitrary time-based animation causing scene drift independent of scroll.
-- Use a suitable pinned scene/long runway after testing actual layout.
-- Ensure ancestor overflow rules do not break sticky positioning.
-- No horizontal overflow, sudden jumps, trapped scroll or excessive blank runway.
-- Browser refresh and responsive layout must behave predictably.
+## Acceptance Criteria
 
-## Portrait
-
-Use the supplied portrait after verifying its real path. Preserve its aspect ratio and transparency. Never stretch it or crop away most of the body during the final state. Do not duplicate visible HTML/WebGL portrait layers. No grey panel, pedestal, shelf or floor shadow. A transparent texture on 3D geometry is acceptable if used honestly and without distortion.
-
-## Environment
-
-The cloud environment is a core requirement. Prefer a properly licensed cloud/sky image or texture with layered depth and subtle parallax, or a carefully built procedural scene if it actually looks convincing. A flat beige gradient with lines is not sufficient. Do not add unrelated architecture, buildings or fantasy scenery.
-
-## Contact
-
-Initiate Inquiry and Get in Touch open an accessible modal. Escape and visible close button must close it. Outside click may close it. Lock background scroll while open; manage focus and restore it to the opener. Use exact owner email and LinkedIn.
-
-## Audio
-
-No track is active until the owner chooses a properly licensed track. See `AUDIO_DECISION.md`.
-
-## Responsive behaviour
-
-Desktop is the primary art direction. Tablet/mobile require intentional re-composition, not merely shrinking desktop positions. Keep portrait and labels readable; move cards into a suitable arrangement when radial positioning no longer fits; maintain the progression; reduce GPU load; support reduced motion.
-
-## Acceptance
-
-Act 01 is not complete until actual browser captures/recording are available at 0%, 20%, 40%, 60%, 85% and 100%, plus reverse-scroll evidence. The owner must approve the actual visual result.
+Act 01 milestone review requires:
+1. Browser screen captures at 0%, 20%, 40%, 60%, 80%, and 100% scroll progress.
+2. Reverse scroll demonstration (100% → 0%).
+3. Contact modal keyboard/focus verification.
+4. Mobile and tablet responsive validation.
+5. Explicit owner approval before proceeding to Chapter 02.

@@ -1,48 +1,74 @@
 # Design Decisions — The Living Signal
 
-This document preserves the approved visual direction and prevents repeated, unwanted redesigns.
+## Master References & Source of Truth
 
-## Approved reference
+Visual design decisions are governed by:
+1. **`docs/reference/act-01-master-storyboard.png`** — Exact visual composition, environment, architectural framing, lighting, floating holographic elements, and 5-stage scroll choreography for Act 01.
+2. **`docs/MASTER_CREATIVE_BRIEF.md`** — Comprehensive portfolio vision, aesthetic principles, colour system, chapter narrative, and technical guidelines.
 
-The approved Act 01 reference is the **second five-stage storyboard** supplied by the owner on 4 November 2026. It depicts the initial introduction, scroll transition, ring formation, sequential topic cards and final connected discovery state.
+---
 
-The storyboard is a design reference, not a production asset. Recreate it with a responsive scene and real UI.
+## Act 01 Visual Atmosphere & Composition
 
-## Visual atmosphere
+As established in the master storyboard (`act-01-master-storyboard.png`):
+- **Sunset & Atmospheric Environment**: Luminous sunset sky blending peach, soft sky-blue, coral, and warm ivory, radiating serene natural light.
+- **Lakeside Skyline & Water Reflections**: Distant architectural skyline across a calm lake, inspired by Udaipur's Lake Pichola palace architecture and Rajasthan havelis, casting soft water reflections.
+- **Architectural Framing & Flowering Foreground**: An intricate red-sandstone haveli archway framing the left of the scene, draped with vibrant magenta/pink bougainvillea flowering vines.
+- **Realistic Human Portrait**: High-fidelity, transparent portrait of Aditya (`aditya.png`) in natural human form with warm lighting matching the sunset. Fully proportionate; never low-poly, voxel, pixelated, or over-cropped.
+- **Floating Technical Elements**: Floating holographic elements orbiting the composition:
+  - Glowing AI processor chip (`AI`).
+  - Luminous code card (`</>`).
+  - Translucent Linux penguin badge (Tux).
+  - 3D server rack tower.
+- **Glowing Orbital Rings**: Delicate, luminous orbital paths with travelling coral/peach nodes that progressively form around the portrait as scroll advances, without obscuring Aditya's face.
+- **Topic Cards as Luminous Information Nodes**: Five refined technical cards connected by 1px glowing vector paths to specific orbital nodes:
+  1. `</>` **Software Engineering**
+  2. Brain/chip **AI & Local LLMs**
+  3. Layered nodes **Autonomous Agents**
+  4. CPU chip **Linux & System Design**
+  5. Play/cursor **Creative Technology**
 
-Target: a luminous, atmospheric, premium technology-film aesthetic.
-- Expansive peach and soft sky-blue cloud environment.
-- Warm ivory light and coral accents.
-- Atmospheric depth and natural cloud gradients.
-- Delicate luminous orbital curves.
-- Controlled bloom and glowing connection points.
-- Elegant typography with strong contrast and readable body copy.
-- Translucent cards integrated into the environment, not generic dashboard widgets.
+---
 
-The cloud/sky environment must be recognisable as an environment. A flat pale CSS gradient is not an acceptable substitute.
+## Approved Colour System
 
-## Palette
+| Role | Colour Family | Usage |
+| :--- | :--- | :--- |
+| **Sky & Atmosphere** | Soft sky blue, light aqua, peach, warm ivory | Multi-layered atmospheric sky and lake reflections |
+| **Accents & Energy** | Warm coral, saffron-inspired warm accents, champagne gold | Orbital curves, travelling nodes, active indicators, button fills |
+| **Architecture & Flora** | Red sandstone, terracotta, vibrant magenta/pink bougainvillea | HAVELI archway framing and foreground floral accents |
+| **Card Backplates** | Warm ivory / deep twilight with restrained transparency | Subdued information node backings with subtle coral borders |
+| **Text** | Warm ivory, crisp off-white, muted champagne | High-contrast readable typography |
 
-Keep the existing warm palette where available: warm ivory, peach, soft sky blue, coral and soft white illumination. Do not introduce a global theme replacement. Compare any proposed tokens against the approved reference before changing them.
+### Disallowed & Rejected Palettes
+- ❌ Rose-wine.
+- ❌ Muted dull gold.
+- ❌ Sage green.
+- ❌ Deep corporate blue / generic navy.
+- ❌ Blue-violet gradients.
+- ❌ Neon-green "hacker" AI styling.
+- ❌ Generic purple-blue AI gradients.
 
-## Composition
+---
 
-- Portrait is the primary visual anchor.
-- Preserve natural aspect ratio; keep the portrait fully visible at the final state.
-- Initial text and portrait form a balanced composition.
-- During scroll, text leaves the stage and the portrait moves to the centre while scaling to fit.
-- Rings form around the portrait without obscuring the face.
-- Five topic cards occupy deliberate positions around the orbital structure.
-- Cards remain legible and do not overlap the portrait or one another.
+## Motion & Interaction Language
 
-## Motion language
+- **Scroll-Scrubbed Progression**: All animations are driven deterministically by scroll progress via GSAP ScrollTrigger timelines. Slow scroll, fast scroll, and reverse scroll are seamless.
+- **No Idle Drift**: No unlinked time-based drift that displaces 3D elements away from scroll state.
+- **Custom Cursor**: Custom dot-and-ring cursor with smooth physics, responsive hover states, and touch/reduced-motion fallback.
+- **Interaction Inspiration**: [Ameen Abdullah](https://ameen-abdullah.dev/) provides inspiration for interaction polish and camera choreography, while keeping an original visual identity.
 
-Calm, controlled, fluid and cinematic. Motion is driven by scroll progress. Curves progressively draw into view, connection nodes travel along paths, and cards reveal sequentially with restrained opacity/position/scale changes. Forward and reverse scroll both work. Avoid jitter, random movement, sudden jumps and constant distracting animation.
+---
 
-## Rejected concepts
+## Explicitly Rejected Concepts
 
-The owner has already rejected giant name typography colliding with the portrait, duplicate HTML/WebGL portrait, flat grey backing panel, oversized face crop, huge floor/triangular shadow, pedestal/shelf, abstract glass sculpture, random spheres and particles, unrelated architecture, dark glass fins, flat muted beige with arbitrary orbit lines, and scattered generic dashboard cards.
-
-## Design review rule
-
-A code change is not design approval. The owner judges the actual browser output. Every milestone must include captures at meaningful scroll positions.
+The following directions must never be reintroduced:
+- ❌ Flat beige/ivory canvas or basic CSS gradient as the entire scene.
+- ❌ Generic glassmorphism or scattered dashboard widgets.
+- ❌ Minecraft, voxel, pixel-art, blocky or low-poly portrait treatments.
+- ❌ Large cropped face portrait or cropping that cuts off the body at final state.
+- ❌ Duplicate visible HTML and WebGL portrait layers.
+- ❌ Grey backing panel, pedestal, shelf, floor shadow, or triangular drop shadow behind portrait.
+- ❌ Abstract unrelated glass sculptures, random spheres, or arbitrary fantasy buildings.
+- ❌ Autoplay audio or ripped YouTube tracks.
+- ❌ Hardcoded project catalogues in Chapter 06.
