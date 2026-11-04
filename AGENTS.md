@@ -1,91 +1,100 @@
 # AGENT INSTRUCTIONS — READ FIRST
 
-These instructions apply to every coding agent and every conversation working in this repository. Read this file and the relevant files under `docs/` before making changes.
+These instructions apply to every coding agent and every conversation working in this repository. Read this file, `README.md`, and all files under `docs/` before making changes.
 
-## 1. Start with inspection, not implementation
+## 1. Source of Truth & Governance Hierarchy
 
-Before editing:
-1. Read `README.md` and all files under `docs/`.
-2. Inspect the actual repository tree, git status, package manager files, assets and existing code.
-3. Establish whether this is a clean scaffold or an existing application. Never assume either.
-4. Identify which assets are present and which still need to be supplied by the owner.
-5. Write a concise audit and proposed implementation plan.
-6. Wait for approval before scaffolding, changing the global theme, replacing architecture, or implementing chapters.
+When resolving requirements or priorities, strictly follow this hierarchy:
+1. **Latest explicit directives from the owner.**
+2. [`docs/MASTER_CREATIVE_BRIEF.md`](docs/MASTER_CREATIVE_BRIEF.md) — Overarching vision, complete ten-chapter narrative, four cinematic sequences, aesthetic philosophy, and technical architecture for the entire portfolio.
+3. [`docs/reference/act-01-master-storyboard.png`](docs/reference/act-01-master-storyboard.png) — Authoritative visual reference for Act 01 composition, sunset-lakeside environment, architectural framing, realistic human portrait, floating holographic tech elements, and 5-stage scroll choreography.
+4. [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md) and [`docs/ACT_01_SPEC.md`](docs/ACT_01_SPEC.md) — Detailed design specifications, interaction tokens, and stage-by-stage implementation specifications.
+5. Supporting visual references — Supplementary inspiration translated into contemporary 3D elements.
+6. Existing portfolio (`https://adityadugar.vercel.app/`) — Content, personal details, project links, assets, and functionality source ONLY (never visual design).
 
-## 2. Non-negotiable design decisions
+Do not make changes to the approved visual composition, themes, or layouts without the owner's explicit permission.
+
+## 2. Non-Negotiable Design & Visual Decisions
 
 - Project title: **THE LIVING SIGNAL**.
-- The approved Act 01 reference is the second five-stage storyboard shared by the owner on 4 November 2026.
-- Maintain the warm peach, warm ivory, soft sky-blue and coral visual family.
-- The cloud/sky environment is a core visual requirement, not an optional flat gradient.
-- Orbital rings progressively draw around the portrait as scroll progresses.
-- Glowing nodes travel along paths; five topic cards appear progressively and connect to those paths.
-- Portrait remains proportionate and fully visible at the final state.
-- Introductory text and header leave the scene as the portrait becomes central.
-- The experience reverses naturally on upward scroll.
+- The authoritative visual reference for Act 01 is [`docs/reference/act-01-master-storyboard.png`](docs/reference/act-01-master-storyboard.png).
+- **Scenic Sunset Lakeside Environment**: Faithful reproduction of the sunset sky, lake palace reflections, sandstone haveli archway with blooming bougainvillea framing the left, floating holographic elements (`AI` chip, code card, Linux Tux badge, 3D server rack tower), and glowing orbital rings.
+- **Realistic Human Portrait**: Use Aditya's realistic portrait (`aditya.png`) with clean alpha transparency, warm sunset lighting, and preserved proportions. Fully visible and proportionate in both initial and final discovery states.
+- Maintain the approved colour family: warm ivory, peach, soft sky-blue, warm coral, champagne gold, and soft terracotta.
+- The scenic environment is an authentic layered 3D world with depth and reflections; a flat CSS gradient is strictly unacceptable.
+- **5-Stage Scroll Choreography**:
+  - Stage 1 (0%): Initial View (hero text, portrait, scenic environment, floating tech elements).
+  - Stage 2 (20%): Scrolling Begins (hero text fades cleanly with zero ghosting; portrait glides to center).
+  - Stage 3 (40%): Transformation (orbital rings and connection lines form with peach/coral glow).
+  - Stage 4 (60%): Connections (5 topic cards appear sequentially with animated vector connectors).
+  - Stage 5 (80–100%): Discovery (all 5 cards connected and balanced around central portrait).
+- **The Complete Experience**: The finished site contains all ten chapters across the four major cinematic sequences defined in `docs/MASTER_CREATIVE_BRIEF.md`:
+  - Sequence 01: The Introduction (Chapter 01)
+  - Sequence 02: From Curiosity to Connected Systems (Chapters 02–05)
+  - Sequence 03: The Project Gallery & Collaboration (Chapters 06–07)
+  - Sequence 04: The Future and Closing (Chapters 08–10)
+- Natural, deterministic reverse scrolling that unwinds the scene back to Stage A.
 
-## 3. Explicitly rejected directions
+## 3. Explicitly Rejected Directions
 
-Do not reintroduce:
-- Flat beige/ivory canvas with a basic CSS gradient as the entire environment.
-- Thin random loops without a deliberate orbital composition.
-- Generic dashboard cards scattered around the screen.
-- A large cropped face portrait or portrait that hides most of the body.
-- Duplicate visible HTML and WebGL portraits.
-- Grey portrait backing, pedestal, shelf, floor shadow or triangular shadow.
-- Abstract glass sculptures, random spheres, arbitrary particles or unrelated architecture.
-- Static storyboard image or prerecorded video as a substitute for an interactive scene.
-- Dark-dominant styling, deep blue, blue-violet, dominant teal, rose-wine, muted gold or sage.
-- Generic sections that all repeat the same card layout.
-- Invented biography, accomplishments, metrics, clients, expertise or work history.
+Never introduce or reintroduce:
+- ❌ Flat beige/ivory canvas or basic CSS gradient as the environment.
+- ❌ Minecraft, voxel, pixel-art, blocky, or low-poly portrait/character styling.
+- ❌ Oversized face crop or cropping that cuts off the body at final state.
+- ❌ Duplicate visible HTML and WebGL portraits.
+- ❌ Grey portrait backing, pedestal, shelf, floor shadow, or triangular drop shadow.
+- ❌ Generic glassmorphism or scattered dashboard widgets.
+- ❌ Abstract unrelated glass sculptures, random spheres, arbitrary particles, or unrelated fantasy buildings.
+- ❌ Dark-dominant styling, deep blue, blue-violet, dominant teal, rose-wine, muted gold, or neon-green AI stereotypes.
+- ❌ Invented biography, accomplishments, metrics, clients, expertise, or work history.
+- ❌ Location labels (e.g. Bikaner, Udaipur) added to website text.
+- ❌ Autoplay audio or ripped YouTube tracks.
 
-## 4. Protect existing work and data
+## 4. Protect Existing Work and Data
 
 - Never delete the project directory or bulk-delete files as a shortcut.
 - Never run destructive commands such as `rm -rf`, `git clean -fdx`, or forced resets without explicit, specific approval.
 - Before replacing files, inspect their contents and preserve anything user-authored or reusable.
-- Do not overwrite original reference assets.
-- Do not change global theme tokens, typography, navigation or unrelated chapters while fixing Act 01 unless explicitly approved.
-- Keep changes scoped and reviewable.
-- Do not commit, push, deploy or publish unless explicitly asked.
-- Never store secrets or API keys in the repository.
+- Never overwrite or modify original reference assets or the master storyboard (`docs/reference/act-01-master-storyboard.png`).
+- Never modify the original portrait source file (`aditya.png`). Copy it non-destructively to `public/assets/aditya.png`.
+- Keep changes strictly scoped to the currently approved milestone.
+- Never store secrets or API keys in client-side code or public repositories.
 
-## 5. Content and identity constraints
+## 5. Content and Identity Constraints
 
-- `docs/STORY_CONTENT.md` is the content source of truth.
-- The owner is a Software Engineering student; represent experience and learning honestly.
+- [`docs/STORY_CONTENT.md`](docs/STORY_CONTENT.md) and [`docs/MASTER_CREATIVE_BRIEF.md`](docs/MASTER_CREATIVE_BRIEF.md) are the content sources of truth.
+- The owner is a Software Engineering student at Jain University; represent experience and learning honestly.
 - Never use the phrase “I'm a passionate developer”.
-- Do not add Bikaner, hometown or location references.
+- Do not add Bikaner, hometown, or location references to the text copy.
 - Use the exact contact details in `docs/PROJECT_BRIEF.md`.
-- Use actual public pinned repositories for the work chapter; verify data rather than inventing it.
+- Use actual public pinned repositories for the Chapter 06 work gallery via dynamic GitHub GraphQL query; verify data rather than inventing or hardcoding it.
 
-## 6. Audio constraints
+## 6. Audio Constraints
 
-- Remove/disable the broken previous audio implementation.
-- Audio remains OFF and absent until the owner chooses a track and approves integration.
-- Do not reuse the previously supplied YouTube track.
-- Scrolling, navigation, page load and React rerenders must never enable audio.
-- Do not substitute unlicensed stock music.
+- The site remains **100% silent** by default.
+- No background soundtrack is loaded or played until the owner selects a licensed track and explicitly approves integration.
+- Sound toggle rendered in muted state in navigation bar.
+- Scrolling, navigation, page load, and React rerenders must never enable audio.
+- Never use unlicensed music or rip from streaming platforms.
 
-## 7. Implementation discipline
+## 7. Implementation Discipline
 
 - Implement one approved milestone at a time.
-- Act 01 must be reviewed and explicitly approved before work starts on Act 02.
-- Do not redesign the entire website while fixing one chapter.
-- Do not claim functionality based only on compilation or type checks.
-- Validate the actual browser experience: slow scroll, fast scroll, reverse scroll and mobile.
-- Clean up event listeners, animation contexts, observers and WebGL resources.
-- Respect reduced-motion preferences and provide a graceful non-WebGL fallback.
+- **Act 01 must be reviewed and explicitly approved before any work begins on Act 02 / Chapters 02–10.**
+- Do not redesign the website or change global theme tokens while working on a milestone.
+- Do not claim functionality based only on compilation or type checks; validate in real browsers across slow scroll, fast scroll, reverse scroll, and mobile.
+- Clean up event listeners, animation contexts, observers, and WebGL resources (`dispose()`).
+- Respect reduced-motion preferences (`prefers-reduced-motion`) and provide a graceful WebGL fallback.
 
-## 8. Required report after each milestone
+## 8. Required Report After Each Milestone
 
 Report:
 1. Files changed.
 2. What changed and why.
 3. What was deliberately left untouched.
 4. Commands/tests run and their actual results.
-5. Browser validation performed.
+5. Browser validation performed (screenshots at key scroll positions).
 6. Known limitations.
-7. Screenshots or recording from the actual implementation.
+7. Next steps awaiting owner approval.
 
-Do not proceed to the next milestone until the owner approves it.
+Do not proceed to the next milestone until the owner explicitly approves the report.
