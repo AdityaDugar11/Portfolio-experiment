@@ -1,0 +1,11 @@
+{
+  "source_video": "05feb608-0dc5-4144-99c0-7110f41e7fe6.mp4",
+  "frame_count": 240,
+  "fps": 24,
+  "width": 1280,
+  "height": 720,
+  "duration_seconds": 10.026667,
+  "format": "WebP",
+  "sequence": "frames/frame_0001.webp through frames/frame_0240.webp",
+  "audio": "Not included; this package contains still image frames only"
+}
