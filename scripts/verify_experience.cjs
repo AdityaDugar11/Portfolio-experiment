@@ -207,17 +207,22 @@ async function run() {
   console.log('Capturing Stage 7: Chapter Reading Experience (Chapter 01)...');
   await cdp.evaluate(`
     const cards = document.querySelectorAll('#page-03-deck-container [role="button"]');
-    if (cards[0]) cards[0].click();
+    if (cards[0]) {
+      cards[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
   `);
   await cdp.sleep(800);
   await cdp.captureScreenshot(path.join(OUTPUT_DIR, '08-chapter-01-full-story.png'));
   for (let i = 0; i < 8; i++) await cdp.captureFrame();
 
-  // 8. Stage 8: Continuous Scrolling & Horizontal Slide Transition to Chapter 02
-  console.log('Capturing Stage 8: Continuous Reading Slide into Chapter 02...');
+  // 8. Stage 8: Transition to Chapter 02
+  console.log('Capturing Stage 8: Transition into Chapter 02 (Beyond the Interface)...');
   await cdp.evaluate(`
-    const nextBtn = document.querySelector('#chapter-reader-view footer button:last-child');
-    if (nextBtn) nextBtn.click();
+    const reader = document.getElementById('chapter-reader-view');
+    const nextBtn = reader ? Array.from(reader.querySelectorAll('button')).find(b => b.textContent.includes('Next')) : null;
+    if (nextBtn) {
+      nextBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
   `);
   await cdp.sleep(800);
   await cdp.captureScreenshot(path.join(OUTPUT_DIR, '09-chapter-02-transitioned.png'));
@@ -226,8 +231,9 @@ async function run() {
   // Return to Deck
   console.log('Returning to deck...');
   await cdp.evaluate(`
-    const returnBtn = document.querySelector('#chapter-reader-view header button');
-    if (returnBtn) returnBtn.click();
+    const reader = document.getElementById('chapter-reader-view');
+    const returnBtn = reader ? Array.from(reader.querySelectorAll('button')).find(b => b.textContent.includes('Card Deck') || b.textContent.includes('All 10 Cards')) : null;
+    if (returnBtn) returnBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   `);
   await cdp.sleep(600);
 
