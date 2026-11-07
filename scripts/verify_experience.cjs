@@ -7,12 +7,17 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-const FRAMES_DIR = path.join(OUTPUT_DIR, 'frames');
-if (!fs.existsSync(FRAMES_DIR)) {
-  fs.mkdirSync(FRAMES_DIR, { recursive: true });
-}
+const DESKTOP_FRAMES_DIR = path.join(OUTPUT_DIR, 'desktop_frames');
+const MOBILE_FRAMES_DIR = path.join(OUTPUT_DIR, 'mobile_frames');
+if (!fs.existsSync(DESKTOP_FRAMES_DIR)) fs.mkdirSync(DESKTOP_FRAMES_DIR, { recursive: true });
+if (!fs.existsSync(MOBILE_FRAMES_DIR)) fs.mkdirSync(MOBILE_FRAMES_DIR, { recursive: true });
 
-let frameIndex = 0;
+// Clean previous temporary frame captures
+fs.readdirSync(DESKTOP_FRAMES_DIR).forEach((f) => fs.unlinkSync(path.join(DESKTOP_FRAMES_DIR, f)));
+fs.readdirSync(MOBILE_FRAMES_DIR).forEach((f) => fs.unlinkSync(path.join(MOBILE_FRAMES_DIR, f)));
+
+let desktopFrameIdx = 0;
+let mobileFrameIdx = 0;
 
 function launchChrome(port = 9222) {
   const chromeProcess = spawn(
@@ -33,7 +38,7 @@ function launchChrome(port = 9222) {
   return chromeProcess;
 }
 
-async function getPageWebSocketUrl(port = 9222, maxAttempts = 15) {
+async function getPageWebSocketUrl(port = 9222, maxAttempts = 20) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const res = await fetch(`http://localhost:${port}/json/list`);
@@ -43,9 +48,9 @@ async function getPageWebSocketUrl(port = 9222, maxAttempts = 15) {
         return page.webSocketDebuggerUrl;
       }
     } catch {
-      // Chrome starting up
+      // Chrome initializing
     }
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 300));
   }
   throw new Error('Could not connect to Chrome CDP after maximum attempts');
 }
@@ -109,10 +114,26 @@ class CDPClient {
     return filepath;
   }
 
-  async captureFrame() {
-    const padded = String(frameIndex++).padStart(5, '0');
-    const filepath = path.join(FRAMES_DIR, `frame_${padded}.png`);
+  async captureDesktopVideoFrame() {
+    const padded = String(desktopFrameIdx++).padStart(5, '0');
+    const filepath = path.join(DESKTOP_FRAMES_DIR, `frame_${padded}.png`);
     await this.captureScreenshot(filepath);
+  }
+
+  async captureMobileVideoFrame() {
+    const padded = String(mobileFrameIdx++).padStart(5, '0');
+    const filepath = path.join(MOBILE_FRAMES_DIR, `frame_${padded}.png`);
+    await this.captureScreenshot(filepath);
+  }
+
+  async scrollTo(y) {
+    await this.evaluate(`
+      if (window.__lenis) {
+        window.__lenis.scrollTo(${y}, { immediate: true });
+      } else {
+        window.scrollTo(0, ${y});
+      }
+    `);
   }
 
   async sleep(ms) {
@@ -125,7 +146,21 @@ class CDPClient {
 }
 
 async function run() {
-  console.log('--- Starting Living Signal Final Validation ---');
+  console.log('=== The Living Signal: Strict Implementation Verification ===');
+
+  // Verify preview server availability
+  let previewProc = null;
+  try {
+    const testFetch = await fetch('http://localhost:4173/').catch(() => null);
+    if (!testFetch || !testFetch.ok) {
+      console.log('Starting preview server on port 4173...');
+      previewProc = spawn('npm', ['run', 'preview'], { stdio: 'ignore' });
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  } catch (err) {
+    console.warn('Preview check warning:', err);
+  }
+
   const chromeProc = launchChrome(9222);
   let cdp;
 
@@ -133,180 +168,169 @@ async function run() {
     const wsUrl = await getPageWebSocketUrl(9222);
     cdp = new CDPClient(wsUrl);
     await cdp.connect();
-    console.log('Connected to CDP at:', wsUrl);
+    console.log('Connected to Chrome CDP successfully.');
 
-  // Enable domains
-  await cdp.send('Page.enable');
-  await cdp.send('Runtime.enable');
-  await cdp.send('DOM.enable');
+    await cdp.send('Page.enable');
+    await cdp.send('Runtime.enable');
+    await cdp.send('DOM.enable');
 
-  // Check for any runtime errors
-  const pageTitle = await cdp.evaluate('document.title');
-  console.log('Verified Page Title:', pageTitle);
-
-  // Set Desktop 1440x900 Viewport
-  await cdp.setViewport(1440, 900, false);
-  await cdp.evaluate('window.scrollTo(0, 0)');
-  await cdp.sleep(1200);
-
-  // 1. Stage 1: Page 01 Initial Hero View
-  console.log('Capturing Stage 1: Page 01 Initial View...');
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '01-page-01-initial-hero.png'));
-  for (let i = 0; i < 8; i++) await cdp.captureFrame();
-
-  // Scroll to exit text
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 0.9, behavior: "instant" })');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '02-page-01-editorial-exit.png'));
-  for (let i = 0; i < 6; i++) await cdp.captureFrame();
-
-  // 2. Stage 2: WebGL Scene Transformation
-  console.log('Capturing Stage 2: WebGL Scene Transformation Zone...');
-  // Runway 1 is 180vh, Runway 2 is 160vh (midpoint at 2.6 * innerHeight)
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 2.6, behavior: "instant" })');
-  await cdp.sleep(800);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '03-webgl-shader-transition.png'));
-  for (let i = 0; i < 8; i++) await cdp.captureFrame();
-
-  // 3. Stage 3: Page 02 The Living Signal (Orbital Constellation)
-  console.log('Capturing Stage 3: Page 02 The Living Signal (Portrait + 3 Rings + 10 Connections)...');
-  // Runway 3 runs from 3.4 to 6.2 * innerHeight (active constellation at 5.4 * innerHeight)
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 5.4, behavior: "instant" })');
-  await cdp.sleep(800);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '04-page-02-orbital-constellation.png'));
-  for (let i = 0; i < 10; i++) await cdp.captureFrame();
-
-  // 4. Stage 4: Page 02 -> Page 03 Card Collection Zone
-  console.log('Capturing Stage 4: Card Collection Transition (Cards fly to stack)...');
-  // Runway 4 runs from 6.2 to 8.0 * innerHeight (collection midpoint at 7.1 * innerHeight)
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 7.1, behavior: "instant" })');
-  await cdp.sleep(800);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '05-card-collection-transition.png'));
-  for (let i = 0; i < 8; i++) await cdp.captureFrame();
-
-  // 5. Stage 5: Page 03 Layered Chapter Card Deck
-  console.log('Capturing Stage 5: Page 03 Single Overlapping Card Deck...');
-  await cdp.evaluate('document.getElementById("page-03-section")?.scrollIntoView({ behavior: "instant" })');
-  await cdp.sleep(800);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '06-page-03-card-deck-stack.png'));
-  for (let i = 0; i < 10; i++) await cdp.captureFrame();
-
-  // 6. Stage 6: Desktop Hover Separation
-  console.log('Capturing Stage 6: Desktop Hover separation on Card 03...');
-  await cdp.evaluate(`
-    const cards = document.querySelectorAll('#page-03-deck-container [role="button"]');
-    if (cards[2]) {
-      cards[2].dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    // 1. Strict Acceptance Verification: Zero Page 3 in DOM
+    const page03Elements = await cdp.evaluate(`
+      ({
+        hasPage03Deck: !!document.getElementById('page-03-deck-container'),
+        hasPage03Section: !!document.getElementById('page-03-section'),
+        hasChapterReader: !!document.getElementById('chapter-reader-view'),
+        hasCardCollection: !!document.getElementById('page-02-to-03-collection-runway'),
+      })
+    `);
+    console.log('Page 03 Strict Absence Verification:', page03Elements);
+    if (page03Elements.hasPage03Deck || page03Elements.hasPage03Section || page03Elements.hasChapterReader) {
+      throw new Error('STRICT CONDITION VIOLATION: Page 03 or ChapterReader still detected in DOM!');
     }
-  `);
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '07-page-03-card-hover.png'));
-  for (let i = 0; i < 6; i++) await cdp.captureFrame();
 
-  // 7. Stage 7: Chapter Reading Scene (Chapter 01)
-  console.log('Capturing Stage 7: Chapter Reading Experience (Chapter 01)...');
-  await cdp.evaluate(`
-    const cards = document.querySelectorAll('#page-03-deck-container [role="button"]');
-    if (cards[0]) {
-      cards[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    // =========================================================================
+    // PART 1: DESKTOP VALIDATION & RECORDING (1440x900)
+    // =========================================================================
+    console.log('\n--- Part 1: Desktop Validation (1440x900) ---');
+    await cdp.setViewport(1440, 900, false);
+    await cdp.scrollTo(0);
+    await cdp.sleep(1500);
+
+    // Step 1: Page 1 Initial View
+    console.log('1. Page 1 Initial View');
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '01-desktop-page-01-initial.png'));
+    for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
+
+    // Step 2: Page 1 Text Exit (Scroll to 1.0 * H)
+    console.log('2. Page 1 Text Exit');
+    await cdp.scrollTo(900 * 1.0);
+    await cdp.sleep(500);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '02-desktop-page-01-exit.png'));
+    for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
+
+    // Step 3: WebGL Transition Zone (Scroll to 2.6 * H)
+    console.log('3. WebGL Noise Transition Zone');
+    await cdp.scrollTo(900 * 2.6);
+    await cdp.sleep(600);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '03-desktop-webgl-transition.png'));
+    for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
+
+    // Step 4: Page 2 Initial Frame (Scroll to 3.5 * H)
+    console.log('4. Page 2 First Frame (Frame 1/240)');
+    await cdp.scrollTo(900 * 3.5);
+    await cdp.sleep(700);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '04-desktop-page-02-frame-001.png'));
+    for (let i = 0; i < 5; i++) await cdp.captureDesktopVideoFrame();
+
+    // Step 5: Page 2 Middle Animation — Connectors extending (Scroll to 5.0 * H)
+    console.log('5. Page 2 Middle Animation — Connectors Extending');
+    await cdp.scrollTo(900 * 5.0);
+    await cdp.sleep(700);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '05-desktop-page-02-midpoint.png'));
+    for (let i = 0; i < 6; i++) await cdp.captureDesktopVideoFrame();
+
+    // Step 6: Page 2 Final State — All 10 terminal nodes and 10 cards (Scroll to 6.5 * H)
+    console.log('6. Page 2 Final State — Frame 240/240 + Ten Cards Constellation');
+    await cdp.scrollTo(900 * 6.5);
+    await cdp.sleep(800);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '06-desktop-page-02-final-state.png'));
+    for (let i = 0; i < 8; i++) await cdp.captureDesktopVideoFrame();
+
+    // Step 7: Reverse Scroll Validation (Rewind back to Page 2 start, then Page 1)
+    console.log('7. Reverse Scroll Validation');
+    await cdp.scrollTo(900 * 4.2);
+    await cdp.sleep(400);
+    for (let i = 0; i < 3; i++) await cdp.captureDesktopVideoFrame();
+    await cdp.scrollTo(900 * 3.4);
+    await cdp.sleep(400);
+    for (let i = 0; i < 3; i++) await cdp.captureDesktopVideoFrame();
+    await cdp.scrollTo(0);
+    await cdp.sleep(500);
+    for (let i = 0; i < 3; i++) await cdp.captureDesktopVideoFrame();
+
+    // =========================================================================
+    // PART 2: MOBILE VALIDATION & RECORDING (390x844 iPhone Standard)
+    // =========================================================================
+    console.log('\n--- Part 2: Mobile Validation (390x844) ---');
+    await cdp.setViewport(390, 844, true);
+    await cdp.scrollTo(0);
+    await cdp.sleep(1000);
+
+    // Mobile Step 1: Page 1 Initial
+    console.log('1. Mobile Page 1 Initial');
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '07-mobile-390-page-01.png'));
+    for (let i = 0; i < 4; i++) await cdp.captureMobileVideoFrame();
+
+    // Mobile Step 2: Page 2 Frame 1 (Centered 16:9 + Blurred atmosphere)
+    console.log('2. Mobile Page 2 Early — Sharp 16:9 + Enlarged Blurred Backdrop');
+    await cdp.scrollTo(844 * 3.6);
+    await cdp.sleep(700);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '08-mobile-390-page-02-early.png'));
+    for (let i = 0; i < 5; i++) await cdp.captureMobileVideoFrame();
+
+    // Mobile Step 3: Page 2 Final State — Docked 16:9 frame + 10 vertical cards
+    console.log('3. Mobile Page 2 Final — Docked 16:9 + 10 Vertical Cards');
+    await cdp.scrollTo(844 * 6.5);
+    await cdp.sleep(800);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '09-mobile-390-page-02-final.png'));
+    for (let i = 0; i < 8; i++) await cdp.captureMobileVideoFrame();
+
+    // =========================================================================
+    // PART 3: ADDITIONAL RESPONSIVE VIEWPORTS
+    // =========================================================================
+    console.log('\n--- Part 3: Viewport Matrix Captures ---');
+    const viewports = [
+      { name: '10-mobile-360x800', w: 360, h: 800, mobile: true },
+      { name: '11-mobile-430x932', w: 430, h: 932, mobile: true },
+      { name: '12-tablet-768x1024', w: 768, h: 1024, mobile: false },
+      { name: '13-laptop-1366x768', w: 1366, h: 768, mobile: false },
+      { name: '14-desktop-1920x1080', w: 1920, h: 1080, mobile: false },
+    ];
+
+    for (const vp of viewports) {
+      console.log(`Capturing viewport: ${vp.name} (${vp.w}x${vp.h})`);
+      await cdp.setViewport(vp.w, vp.h, vp.mobile);
+      await cdp.scrollTo(vp.h * 6.4);
+      await cdp.sleep(600);
+      await cdp.captureScreenshot(path.join(OUTPUT_DIR, `${vp.name}-page-02.png`));
     }
-  `);
-  await cdp.sleep(800);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '08-chapter-01-full-story.png'));
-  for (let i = 0; i < 8; i++) await cdp.captureFrame();
 
-  // 8. Stage 8: Transition to Chapter 02
-  console.log('Capturing Stage 8: Transition into Chapter 02 (Beyond the Interface)...');
-  await cdp.evaluate(`
-    const reader = document.getElementById('chapter-reader-view');
-    const nextBtn = reader ? Array.from(reader.querySelectorAll('button')).find(b => b.textContent.includes('Next')) : null;
-    if (nextBtn) {
-      nextBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    // =========================================================================
+    // PART 4: ASSEMBLE DEMO RECORDINGS (FFMPEG)
+    // =========================================================================
+    console.log('\n--- Part 4: Assembling Demonstration Videos ---');
+    const desktopMp4 = path.join(OUTPUT_DIR, 'living-signal-desktop-demo.mp4');
+    const mobileMp4 = path.join(OUTPUT_DIR, 'living-signal-mobile-demo.mp4');
+
+    try {
+      execSync(
+        `ffmpeg -y -framerate 6 -i "${path.join(DESKTOP_FRAMES_DIR, 'frame_%05d.png')}" -c:v libx264 -pix_fmt yuv420p -vf "scale=1440:900" -crf 22 "${desktopMp4}"`,
+        { stdio: 'inherit' }
+      );
+      console.log('Desktop demo video created:', desktopMp4);
+    } catch (err) {
+      console.error('Desktop video assembly error:', err);
     }
-  `);
-  await cdp.sleep(800);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '09-chapter-02-transitioned.png'));
-  for (let i = 0; i < 8; i++) await cdp.captureFrame();
 
-  // Return to Deck
-  console.log('Returning to deck...');
-  await cdp.evaluate(`
-    const reader = document.getElementById('chapter-reader-view');
-    const returnBtn = reader ? Array.from(reader.querySelectorAll('button')).find(b => b.textContent.includes('Card Deck') || b.textContent.includes('All 10 Cards')) : null;
-    if (returnBtn) returnBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-  `);
-  await cdp.sleep(600);
+    try {
+      execSync(
+        `ffmpeg -y -framerate 6 -i "${path.join(MOBILE_FRAMES_DIR, 'frame_%05d.png')}" -c:v libx264 -pix_fmt yuv420p -vf "scale=390:844" -crf 22 "${mobileMp4}"`,
+        { stdio: 'inherit' }
+      );
+      console.log('Mobile demo video created:', mobileMp4);
+    } catch (err) {
+      console.error('Mobile video assembly error:', err);
+    }
 
-  // 9. Responsive Breakpoints Validation
-  console.log('Capturing Responsive Breakpoints...');
-  // Tablet: 768x1024
-  await cdp.setViewport(768, 1024, false);
-  await cdp.evaluate('window.scrollTo(0, 0)');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '10-tablet-768-page-01.png'));
-
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 4.6, behavior: "instant" })');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '11-tablet-768-page-02.png'));
-
-  await cdp.evaluate('document.getElementById("page-03-section")?.scrollIntoView({ behavior: "instant" })');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '12-tablet-768-page-03-deck.png'));
-
-  // Mobile: 390x844 (iPhone 14 standard)
-  await cdp.setViewport(390, 844, true);
-  await cdp.evaluate('window.scrollTo(0, 0)');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '13-mobile-390-page-01.png'));
-
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 4.6, behavior: "instant" })');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '14-mobile-390-page-02.png'));
-
-  await cdp.evaluate('document.getElementById("page-03-section")?.scrollIntoView({ behavior: "instant" })');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '15-mobile-390-page-03-deck.png'));
-
-  // Open chapter on mobile
-  await cdp.evaluate(`
-    const openBtn = document.querySelector('#page-03-deck-container button');
-    if (openBtn) openBtn.click();
-  `);
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '16-mobile-390-chapter-reader.png'));
-
-  // Large Desktop: 1920x1080
-  await cdp.setViewport(1920, 1080, false);
-  await cdp.evaluate(`
-    const returnBtn = document.querySelector('#chapter-reader-view button');
-    if (returnBtn) returnBtn.click();
-  `);
-  await cdp.sleep(400);
-  await cdp.evaluate('window.scrollTo({ top: window.innerHeight * 4.6, behavior: "instant" })');
-  await cdp.sleep(600);
-  await cdp.captureScreenshot(path.join(OUTPUT_DIR, '17-desktop-1920-page-02.png'));
-
-  // 10. Assemble Demonstration MP4 Video using ffmpeg
-  console.log('Assembling final demonstration mp4 video...');
-  const videoPath = path.join(OUTPUT_DIR, 'the-living-signal-final-demo.mp4');
-  try {
-    execSync(
-      `ffmpeg -y -framerate 10 -i "${path.join(FRAMES_DIR, 'frame_%05d.png')}" -c:v libx264 -pix_fmt yuv420p -vf "scale=1440:900" -crf 22 "${videoPath}"`,
-      { stdio: 'inherit' }
-    );
-    console.log('Video generated successfully at:', videoPath);
-  } catch (err) {
-    console.error('Error generating ffmpeg video:', err);
-  }
-
-  console.log('--- All Validation Captures Complete! ---');
+    console.log('\n=== ALL VERIFICATION CAPTURES AND RECORDINGS COMPLETE! ===');
   } finally {
     if (cdp) cdp.close();
     if (chromeProc) chromeProc.kill();
+    if (previewProc) previewProc.kill();
   }
 }
 
 run().catch((err) => {
-  console.error('Validation failed:', err);
+  console.error('Verification script failed:', err);
   process.exit(1);
 });

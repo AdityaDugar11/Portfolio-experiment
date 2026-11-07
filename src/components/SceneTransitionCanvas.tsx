@@ -156,8 +156,8 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
     defaultTextureA.minFilter = THREE.LinearFilter;
     defaultTextureA.magFilter = THREE.LinearFilter;
 
-    // Incoming Scene B: Page 2 scenic pastel atmosphere plate
-    const textureB = textureLoader.load('/assets/act-01-scenic-backdrop-pure.png');
+    // Incoming Scene B: Page 2 actual first video frame
+    const textureB = textureLoader.load('/frames/page-02/frame_0001.webp');
     textureB.colorSpace = THREE.SRGBColorSpace;
     textureB.minFilter = THREE.LinearFilter;
     textureB.magFilter = THREE.LinearFilter;

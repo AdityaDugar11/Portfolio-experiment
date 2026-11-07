@@ -7,27 +7,21 @@ import { Navigation } from './components/Navigation';
 import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
 import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
-import { Page02TheLivingSignal } from './components/Page02TheLivingSignal';
-import { Page03CardDeck } from './components/Page03CardDeck';
-import { ChapterReader } from './components/ChapterReader';
-import { ChapterItem, CHAPTERS_DATA } from './data/chaptersData';
+import { Page02Scene } from './components/Page02Scene';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export const App: React.FC = () => {
-  // Modal & Reader States
+  // Modal State
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const [activeReadingChapter, setActiveReadingChapter] = useState<ChapterItem | null>(null);
 
   // Audio State (Unchanged from approved Page 01)
   const [isMuted, setIsMuted] = useState(true);
 
-  // Runway Refs
+  // Runway Refs (Strictly Page 01 -> Transition -> Page 02)
   const page01RunwayRef = useRef<HTMLDivElement>(null);
   const transitionRunwayRef = useRef<HTMLDivElement>(null);
   const page02RunwayRef = useRef<HTMLDivElement>(null);
-  const collectionRunwayRef = useRef<HTMLDivElement>(null);
-  const page03RunwayRef = useRef<HTMLDivElement>(null);
 
   // Visual Scene Layer Refs
   const page01SceneRef = useRef<HTMLDivElement>(null);
@@ -38,8 +32,7 @@ export const App: React.FC = () => {
 
   // Scroll Progress Tracking
   const [transitionProgress, setTransitionProgress] = useState(0); // 0.0 to 1.0 (Page 1 -> Page 2 shader transition)
-  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Page 2 orbital formation)
-  const [collectionProgress, setCollectionProgress] = useState(0); // 0.0 to 1.0 (Page 2 -> Page 3 card assembly)
+  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Page 2 240-frame sequence & card reveal)
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -69,6 +62,7 @@ export const App: React.FC = () => {
       wheelMultiplier: 1.0,
     });
     lenisRef.current = lenis;
+    (window as any).__lenis = lenis;
 
     lenis.on('scroll', ScrollTrigger.update);
 
@@ -90,9 +84,7 @@ export const App: React.FC = () => {
     if (
       !page01RunwayRef.current ||
       !transitionRunwayRef.current ||
-      !page02RunwayRef.current ||
-      !collectionRunwayRef.current ||
-      !page03RunwayRef.current
+      !page02RunwayRef.current
     )
       return;
 
@@ -100,8 +92,6 @@ export const App: React.FC = () => {
       const heroTextBlock = document.getElementById('hero-text-block');
       const mainNav = document.getElementById('main-navigation');
       const scrollIndicator = document.getElementById('scroll-indicator');
-
-      // Set initial transform states cleanly via GSAP (avoids inline style conflicts)
 
       // ========================================================
       // TIMELINE 1: PAGE 01 SCROLL (Approved Exit Choreography)
@@ -195,8 +185,8 @@ export const App: React.FC = () => {
       }
 
       // ========================================================
-      // TIMELINE 3: PAGE 02 ORBITAL PROGRESSION
-      // Character centered, 3 luminous rings ignite, 10 connectors draw, 10 cards reveal
+      // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE
+      // Actual 240 WebP video frames scrubbed deterministically + 10 chapter cards
       // ========================================================
       const page02Timeline = gsap.timeline({
         scrollTrigger: {
@@ -211,24 +201,6 @@ export const App: React.FC = () => {
       });
 
       page02Timeline.to({}, { duration: 1.0 }, 0);
-
-      // ========================================================
-      // TIMELINE 4: PAGE 02 -> PAGE 03 CARD COLLECTION
-      // 10 cards detach from orbital scene and assemble into single overlapping stack
-      // ========================================================
-      const collectionTimeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: collectionRunwayRef.current,
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 0.5,
-          onUpdate: (self) => {
-            setCollectionProgress(self.progress);
-          },
-        },
-      });
-
-      collectionTimeline.to({}, { duration: 1.0 }, 0);
     });
 
     return () => {
@@ -247,8 +219,13 @@ export const App: React.FC = () => {
   };
 
   const handleExploreWork = () => {
-    const ch06 = CHAPTERS_DATA.find((c) => c.id === 'chapter-06');
-    if (ch06) setActiveReadingChapter(ch06);
+    if (lenisRef.current && page02RunwayRef.current) {
+      // Scroll smoothly to Page 02 where Chapter 06 (The Work I Choose to Show) is anchored
+      const targetY = page02RunwayRef.current.offsetTop + page02RunwayRef.current.offsetHeight * 0.55;
+      lenisRef.current.scrollTo(targetY, { duration: 2.0 });
+    } else {
+      page02RunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
@@ -277,8 +254,8 @@ export const App: React.FC = () => {
 
       {/* ========================================================
           PAGE 02 VISUAL LAYER: THE LIVING SIGNAL
-          Aditya's authentic portrait (aditya.png), 3 orbital rings,
-          10 outward curved connectors, 10 chapter cards.
+          Actual 240 WebP video frames + 10 chapter cards attached
+          to the actual terminal nodes. Strictly NO Page 3.
           ======================================================== */}
       <div
         ref={page02SceneRef}
@@ -289,11 +266,7 @@ export const App: React.FC = () => {
           pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
         }}
       >
-        <Page02TheLivingSignal
-          progress={page02Progress}
-          collectionProgress={collectionProgress}
-          onOpenChapter={(chapter) => setActiveReadingChapter(chapter)}
-        />
+        <Page02Scene progress={page02Progress} />
       </div>
 
       {/* ========================================================
@@ -317,6 +290,7 @@ export const App: React.FC = () => {
 
       {/* ========================================================
           SCROLL RUNWAYS (GSAP ScrollTrigger Synchronized)
+          Strictly Page 01, Transition, and Page 02. No Page 03!
           ======================================================== */}
       {/* Runway 1: Page 01 (Cinematic Video Zoom & Editorial Text Exit) */}
       <div
@@ -334,52 +308,13 @@ export const App: React.FC = () => {
         aria-hidden="true"
       />
 
-      {/* Runway 3: Page 02 Orbital Constellation Formation (Rings & 10 Connections) */}
+      {/* Runway 3: Page 02 Living Signal (240-frame sequence & 10 cards) */}
       <div
         ref={page02RunwayRef}
         id="page-02-runway"
-        className="relative w-full h-[280vh] pointer-events-none"
+        className="relative w-full h-[320vh] pointer-events-none"
         aria-hidden="true"
       />
-
-      {/* Runway 4: Page 02 -> Page 03 Card Collection Zone (Cards fly and assemble into deck) */}
-      <div
-        ref={collectionRunwayRef}
-        id="page-02-to-03-collection-runway"
-        className="relative w-full h-[180vh] pointer-events-none"
-        aria-hidden="true"
-      />
-
-      {/* ========================================================
-          PAGE 03: THE LAYERED CHAPTER CARD DECK
-          Single overlapping stack (Reference Image 2)
-          Unified warm ivory cards, dark sandstone text, coral accents
-          ======================================================== */}
-      <section
-        ref={page03RunwayRef}
-        id="page-03-section"
-        className="relative z-30 w-full min-h-screen bg-[#181210] border-t border-white/10 shadow-[0_-25px_50px_rgba(0,0,0,0.85)]"
-      >
-        <Page03CardDeck
-          onOpenChapter={(chapter) => setActiveReadingChapter(chapter)}
-        />
-      </section>
-
-      {/* ========================================================
-          CONTINUOUS CHAPTER-READING EXPERIENCE (When active)
-          Vertical scroll driving horizontal card transition
-          ======================================================== */}
-      {activeReadingChapter && (
-        <ChapterReader
-          currentChapter={activeReadingChapter}
-          onSelectChapter={(chapter) => setActiveReadingChapter(chapter)}
-          onReturnToDeck={() => setActiveReadingChapter(null)}
-          onOpenContact={() => {
-            setActiveReadingChapter(null);
-            setIsContactOpen(true);
-          }}
-        />
-      )}
 
       {/* ========================================================
           ACCESSIBLE CONTACT MODAL DIALOG
