@@ -1,45 +1,34 @@
 /**
- * Unified Mobile Portrait Frame Renderer for The Living Signal
+ * Unified Mobile Frame Renderer for The Living Signal
  * Shared between SceneTransitionCanvas (incoming texture B) and Page02MobileExperience.
- * Ensures 100% pixel-perfect alignment, exact 9:16 crop, matching background gradient,
- * and zero jump / seam during transition handoff.
+ * Ensures 100% pixel-perfect alignment, exact horizontal framing centered on Aditya (CamX = 640),
+ * matching ambient atmosphere, and zero jump / seam during transition handoff.
  */
 
-export const CROP_X = 438;
-export const CROP_Y = 0;
-export const CROP_W = 405;
-export const CROP_H = 720;
-export const TARGET_ASPECT = 9 / 16;
+export const FRAME_WIDTH = 1280;
+export const FRAME_HEIGHT = 720;
+export const FRAME_ASPECT = FRAME_WIDTH / FRAME_HEIGHT;
 
-export interface FrameDimensions {
+export interface MobileFrameDimensions {
+  scale: number;
   drawW: number;
   drawH: number;
   drawX: number;
   drawY: number;
 }
 
-export const getMobileDrawDimensions = (windowW: number, windowH: number): FrameDimensions => {
-  const screenAspect = windowW / windowH;
-  let drawW: number;
-  let drawH: number;
-  let drawX: number;
-  let drawY: number;
+export const getMobileDrawDimensions = (
+  windowW: number,
+  windowH: number,
+  camX: number = 640
+): MobileFrameDimensions => {
+  const scale = windowH / FRAME_HEIGHT;
+  const drawW = Math.round(FRAME_WIDTH * scale);
+  const drawH = windowH;
+  const drawX = Math.round(windowW / 2 - camX * scale);
+  const drawY = 0;
 
-  if (screenAspect < TARGET_ASPECT) {
-    // Screen is narrower/taller than 9:16 (standard mobile portrait, e.g. 390x844)
-    drawW = windowW;
-    drawH = Math.round(windowW / TARGET_ASPECT);
-    drawX = 0;
-    drawY = Math.round((windowH - drawH) / 2);
-  } else {
-    // Screen is wider than 9:16
-    drawH = windowH;
-    drawW = Math.round(windowH * TARGET_ASPECT);
-    drawX = Math.round((windowW - drawW) / 2);
-    drawY = 0;
-  }
-
-  return { drawW, drawH, drawX, drawY };
+  return { scale, drawW, drawH, drawX, drawY };
 };
 
 export const renderMobileFrameToContext = (
@@ -47,40 +36,51 @@ export const renderMobileFrameToContext = (
   img: HTMLImageElement,
   windowW: number,
   windowH: number,
-  dpr: number = 1.0
+  dpr: number = 1.0,
+  camX: number = 640
 ): void => {
   ctx.save();
   ctx.scale(dpr, dpr);
 
-  // 1. Draw restrained peach / sky-blue background gradient drawn from scene tones
+  // 1. Draw atmospheric sky & lakeside sunset background gradient
   const bgGrad = ctx.createLinearGradient(0, 0, 0, windowH);
-  bgGrad.addColorStop(0, '#8FA9C4'); // Soft sky-blue
+  bgGrad.addColorStop(0, '#7A96B2'); // Soft sky-blue
   bgGrad.addColorStop(0.28, '#E8A588'); // Soft warm peach
   bgGrad.addColorStop(0.55, '#F4B896'); // Sunset peach
   bgGrad.addColorStop(0.80, '#D48870'); // Warm terracotta
-  bgGrad.addColorStop(1, '#1E1412'); // Dark warm sandstone
+  bgGrad.addColorStop(1, '#181210'); // Dark warm sandstone
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, windowW, windowH);
 
-  // 2. Draw Sharp 9:16 Portrait-Framed Character Scene
-  const { drawW, drawH, drawX, drawY } = getMobileDrawDimensions(windowW, windowH);
-  ctx.drawImage(img, CROP_X, CROP_Y, CROP_W, CROP_H, drawX, drawY, drawW, drawH);
+  // 2. Draw enlarged ambient blurred frame for seamless outer extensions
+  const ambientScale = Math.max(windowW / FRAME_WIDTH, windowH / FRAME_HEIGHT) * 1.15;
+  const ambW = FRAME_WIDTH * ambientScale;
+  const ambH = FRAME_HEIGHT * ambientScale;
+  const ambX = (windowW - ambW) / 2;
+  const ambY = (windowH - ambH) / 2;
 
-  // 3. Subtle edge feathering for seamless blending with background
-  if (drawY > 0) {
-    const topGrad = ctx.createLinearGradient(0, drawY, 0, drawY + 24);
-    topGrad.addColorStop(0, 'rgba(143, 169, 196, 0.95)');
-    topGrad.addColorStop(1, 'rgba(143, 169, 196, 0)');
-    ctx.fillStyle = topGrad;
-    ctx.fillRect(drawX, drawY, drawW, 24);
-  }
-  if (drawY + drawH < windowH) {
-    const btmGrad = ctx.createLinearGradient(0, drawY + drawH - 28, 0, drawY + drawH);
-    btmGrad.addColorStop(0, 'rgba(30, 20, 18, 0)');
-    btmGrad.addColorStop(1, 'rgba(30, 20, 18, 0.95)');
-    ctx.fillStyle = btmGrad;
-    ctx.fillRect(drawX, drawY + drawH - 28, drawW, 28);
-  }
+  ctx.save();
+  ctx.filter = 'blur(24px) brightness(0.88)';
+  ctx.drawImage(img, ambX, ambY, ambW, ambH);
+  ctx.restore();
+
+  // 3. Draw Sharp 16:9 Foreground Character Scene at Horizontal Camera Position
+  const { drawW, drawH, drawX, drawY } = getMobileDrawDimensions(windowW, windowH, camX);
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+  // 4. Soft ambient vignette blending outer edges into warm portfolio palette
+  const vignette = ctx.createRadialGradient(
+    windowW / 2,
+    windowH / 2,
+    windowW * 0.35,
+    windowW / 2,
+    windowH / 2,
+    windowH * 0.75
+  );
+  vignette.addColorStop(0, 'rgba(24, 18, 16, 0)');
+  vignette.addColorStop(1, 'rgba(24, 18, 16, 0.35)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, windowW, windowH);
 
   ctx.restore();
 };

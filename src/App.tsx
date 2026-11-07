@@ -8,7 +8,7 @@ import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
 import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
 import { Page02Scene } from './components/Page02Scene';
-import { Page02MobileExperience } from './components/Page02MobileExperience';
+import { Page02MobileConstellation } from './components/Page02MobileConstellation';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,6 +23,7 @@ export const App: React.FC = () => {
   const page01RunwayRef = useRef<HTMLDivElement>(null);
   const transitionRunwayRef = useRef<HTMLDivElement>(null);
   const page02RunwayRef = useRef<HTMLDivElement>(null);
+  const mobilePage02RunwayRef = useRef<HTMLDivElement>(null);
 
   // Visual Scene Layer Refs
   const page01SceneRef = useRef<HTMLDivElement>(null);
@@ -33,7 +34,8 @@ export const App: React.FC = () => {
 
   // Scroll Progress Tracking
   const [transitionProgress, setTransitionProgress] = useState(0); // 0.0 to 1.0 (Page 1 -> Page 2 shader transition)
-  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Page 2 240-frame sequence & card reveal)
+  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Desktop Page 2 240-frame sequence & card reveal)
+  const [mobilePage02Progress, setMobilePage02Progress] = useState(0); // 0.0 to 1.0 (Mobile Page 2 horizontal constellation)
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -84,8 +86,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (
       !page01RunwayRef.current ||
-      !transitionRunwayRef.current ||
-      !page02RunwayRef.current
+      !transitionRunwayRef.current
     )
       return;
 
@@ -186,7 +187,7 @@ export const App: React.FC = () => {
       }
 
       // ========================================================
-      // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE (DESKTOP)
+      // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE (DESKTOP >= 768px)
       // Actual 240 WebP video frames scrubbed deterministically + 10 chapter cards
       // end: 'bottom bottom' ensures progress reaches exactly 1.0 at document scroll bottom
       // ========================================================
@@ -209,6 +210,30 @@ export const App: React.FC = () => {
 
         page02Timeline.to({}, { duration: 1.0 }, 0);
       }
+
+      // ========================================================
+      // TIMELINE 4: PAGE 02 HORIZONTAL CINEMATIC CONSTELLATION (MOBILE < 768px)
+      // Pinned cinematic stage explored horizontally via vertical page scroll
+      // ========================================================
+      if (window.innerWidth < 768 && mobilePage02RunwayRef.current) {
+        const mobilePage02Timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: mobilePage02RunwayRef.current,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0.4,
+            onUpdate: (self) => {
+              const p = Math.min(Math.max(self.progress, 0), 1);
+              setMobilePage02Progress(p);
+            },
+            onToggle: (self) => {
+              if (self.progress >= 0.99) setMobilePage02Progress(1.0);
+            },
+          },
+        });
+
+        mobilePage02Timeline.to({}, { duration: 1.0 }, 0);
+      }
     });
 
     return () => {
@@ -227,13 +252,19 @@ export const App: React.FC = () => {
   };
 
   const handleExploreWork = () => {
-    if (window.innerWidth < 768) {
-      const ch06 = document.getElementById('chapter-card-chapter-06');
-      if (ch06) {
-        ch06.scrollIntoView({ behavior: 'smooth' });
-        return;
+    if (window.innerWidth < 768 && mobilePage02RunwayRef.current) {
+      // Scroll to right wing on mobile where Chapter 06 is explored (~0.78 progress)
+      if (lenisRef.current) {
+        const targetY =
+          mobilePage02RunwayRef.current.offsetTop +
+          mobilePage02RunwayRef.current.offsetHeight * 0.78;
+        lenisRef.current.scrollTo(targetY, { duration: 2.0 });
+      } else {
+        mobilePage02RunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
+      return;
     }
+
     if (lenisRef.current && page02RunwayRef.current) {
       // Scroll smoothly to Page 02 where Chapter 06 (The Work I Choose to Show) is anchored
       const targetY = page02RunwayRef.current.offsetTop + page02RunwayRef.current.offsetHeight * 0.55;
@@ -285,6 +316,28 @@ export const App: React.FC = () => {
       </div>
 
       {/* ========================================================
+          PAGE 02 VISUAL LAYER: HORIZONTAL CONSTELLATION (MOBILE < 768px)
+          Single continuous cinematic character-and-orbital scene.
+          Vertical finger scrolling explores the wider constellation horizontally.
+          Strictly NO vertical card lists, NO separate sections, NO Page 3.
+          ======================================================== */}
+      <div
+        id="page-02-mobile-scene"
+        className="fixed inset-0 z-20 will-change-transform block md:hidden"
+        style={{
+          opacity: transitionProgress > 0 ? Math.min(transitionProgress * 1.25, 1) : 0,
+          pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
+        }}
+      >
+        <Page02MobileConstellation
+          progress={mobilePage02Progress}
+          onExploreWork={handleExploreWork}
+          onStartJourney={handleStartJourney}
+          onOpenContact={() => setIsContactOpen(true)}
+        />
+      </div>
+
+      {/* ========================================================
           PAGE 01 DOM UI LAYER (Header Navigation, Hero Editorial)
           ======================================================== */}
       <Navigation
@@ -323,7 +376,7 @@ export const App: React.FC = () => {
         aria-hidden="true"
       />
 
-      {/* Runway 3: Page 02 Living Signal (240-frame sequence & 10 cards - Desktop only) */}
+      {/* Runway 3: Page 02 Living Signal (240-frame sequence & 10 cards - Desktop only >= 768px) */}
       <div
         ref={page02RunwayRef}
         id="page-02-runway"
@@ -331,19 +384,13 @@ export const App: React.FC = () => {
         aria-hidden="true"
       />
 
-      {/* ========================================================
-          PAGE 02 MOBILE EXPERIENCE (< 768px)
-          Dedicated Portrait Character Animation + 10 Chapter Cards
-          in normal document flow. Strictly NO Page 3.
-          ======================================================== */}
-      <div className="block md:hidden relative w-full z-20">
-        <Page02MobileExperience
-          transitionProgress={transitionProgress}
-          onExploreWork={handleExploreWork}
-          onStartJourney={handleStartJourney}
-          onOpenContact={() => setIsContactOpen(true)}
-        />
-      </div>
+      {/* Runway 4: Page 02 Mobile Constellation Exploration Runway (Mobile only < 768px) */}
+      <div
+        ref={mobilePage02RunwayRef}
+        id="page-02-mobile-runway"
+        className="relative w-full h-[480vh] pointer-events-none block md:hidden"
+        aria-hidden="true"
+      />
 
       {/* ========================================================
           ACCESSIBLE CONTACT MODAL DIALOG
