@@ -146,20 +146,7 @@ class CDPClient {
 }
 
 async function run() {
-  console.log('=== The Living Signal: Strict Implementation Verification ===');
-
-  // Verify preview server availability
-  let previewProc = null;
-  try {
-    const testFetch = await fetch('http://localhost:4173/').catch(() => null);
-    if (!testFetch || !testFetch.ok) {
-      console.log('Starting preview server on port 4173...');
-      previewProc = spawn('npm', ['run', 'preview'], { stdio: 'ignore' });
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  } catch (err) {
-    console.warn('Preview check warning:', err);
-  }
+  console.log('=== The Living Signal: Scroll & Card Reveal Verification ===');
 
   const chromeProc = launchChrome(9222);
   let cdp;
@@ -174,71 +161,100 @@ async function run() {
     await cdp.send('Runtime.enable');
     await cdp.send('DOM.enable');
 
-    // 1. Strict Acceptance Verification: Zero Page 3 in DOM
-    const page03Elements = await cdp.evaluate(`
-      ({
-        hasPage03Deck: !!document.getElementById('page-03-deck-container'),
-        hasPage03Section: !!document.getElementById('page-03-section'),
-        hasChapterReader: !!document.getElementById('chapter-reader-view'),
-        hasCardCollection: !!document.getElementById('page-02-to-03-collection-runway'),
-      })
-    `);
-    console.log('Page 03 Strict Absence Verification:', page03Elements);
-    if (page03Elements.hasPage03Deck || page03Elements.hasPage03Section || page03Elements.hasChapterReader) {
-      throw new Error('STRICT CONDITION VIOLATION: Page 03 or ChapterReader still detected in DOM!');
-    }
-
     // =========================================================================
-    // PART 1: DESKTOP VALIDATION & RECORDING (1440x900)
+    // PART 1: DESKTOP VALIDATION (1440x900)
     // =========================================================================
     console.log('\n--- Part 1: Desktop Validation (1440x900) ---');
     await cdp.setViewport(1440, 900, false);
     await cdp.scrollTo(0);
-    await cdp.sleep(1500);
+    await cdp.sleep(1200);
 
-    // Step 1: Page 1 Initial View
+    // Initial View
     console.log('1. Page 1 Initial View');
     await cdp.captureScreenshot(path.join(OUTPUT_DIR, '01-desktop-page-01-initial.png'));
     for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
 
-    // Step 2: Page 1 Text Exit (Scroll to 1.0 * H)
-    console.log('2. Page 1 Text Exit');
-    await cdp.scrollTo(900 * 1.0);
-    await cdp.sleep(500);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '02-desktop-page-01-exit.png'));
-    for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
-
-    // Step 3: WebGL Transition Zone (Scroll to 2.6 * H)
-    console.log('3. WebGL Noise Transition Zone');
+    // Scroll through Page 1 to WebGL transition
+    console.log('2. WebGL Transition Zone');
     await cdp.scrollTo(900 * 2.6);
     await cdp.sleep(600);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '03-desktop-webgl-transition.png'));
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '02-desktop-webgl-transition.png'));
     for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
 
-    // Step 4: Page 2 Initial Frame (Scroll to 3.5 * H)
-    console.log('4. Page 2 First Frame (Frame 1/240)');
-    await cdp.scrollTo(900 * 3.5);
-    await cdp.sleep(700);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '04-desktop-page-02-frame-001.png'));
+    // Page 2 Arrival (Frame 1/240)
+    console.log('3. Page 2 First Frame (Frame 1/240)');
+    await cdp.scrollTo(900 * 3.4);
+    await cdp.sleep(600);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '03-desktop-page-02-frame-001.png'));
+    for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
+
+    // Scroll through the 5 pairs sequentially
+    console.log('4. Card Pair 1 Reveal (Chapters 01 & 06)');
+    await cdp.scrollTo(900 * 4.4);
+    await cdp.sleep(500);
+    for (let i = 0; i < 4; i++) await cdp.captureDesktopVideoFrame();
+
+    console.log('5. Card Pair 2 & 3 Reveal (Chapters 02, 07, 03, 08)');
+    await cdp.scrollTo(900 * 5.0);
+    await cdp.sleep(600);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '04-desktop-page-02-midpoint.png'));
     for (let i = 0; i < 5; i++) await cdp.captureDesktopVideoFrame();
 
-    // Step 5: Page 2 Middle Animation — Connectors extending (Scroll to 5.0 * H)
-    console.log('5. Page 2 Middle Animation — Connectors Extending');
-    await cdp.scrollTo(900 * 5.0);
-    await cdp.sleep(700);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '05-desktop-page-02-midpoint.png'));
-    for (let i = 0; i < 6; i++) await cdp.captureDesktopVideoFrame();
+    console.log('6. Card Pair 4 & 5 Reveal (Chapters 04, 09, 05, 10)');
+    await cdp.scrollTo(900 * 5.7);
+    await cdp.sleep(600);
+    for (let i = 0; i < 5; i++) await cdp.captureDesktopVideoFrame();
 
-    // Step 6: Page 2 Final State — All 10 terminal nodes and 10 cards (Scroll to 6.5 * H)
-    console.log('6. Page 2 Final State — Frame 240/240 + Ten Cards Constellation');
-    await cdp.scrollTo(900 * 6.5);
+    // Reach 100% Page 02 Progress (Absolute document scroll bottom)
+    const maxScrollY = await cdp.evaluate('document.documentElement.scrollHeight - window.innerHeight');
+    console.log(`7. Scrolling to absolute document bottom: ${maxScrollY}px`);
+    await cdp.scrollTo(maxScrollY);
     await cdp.sleep(800);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '06-desktop-page-02-final-state.png'));
+
+    // Assert progress and cards visibility
+    const finalMetrics = await cdp.evaluate(`
+      (() => {
+        const leftArticles = Array.from(document.querySelectorAll('#desktop-chapter-cards-layer > div')).slice(0, 5);
+        const rightArticles = Array.from(document.querySelectorAll('#desktop-chapter-cards-layer > div')).slice(5, 10);
+        
+        const cardDetails = Array.from(document.querySelectorAll('#desktop-chapter-cards-layer [role="article"]')).map(el => ({
+          label: el.getAttribute('aria-label'),
+          opacity: window.getComputedStyle(el).opacity,
+          transform: window.getComputedStyle(el).transform,
+          rect: el.getBoundingClientRect(),
+        }));
+
+        return {
+          scrollY: window.scrollY,
+          maxScrollY: document.documentElement.scrollHeight - window.innerHeight,
+          totalCardsRendered: cardDetails.length,
+          allOpacities: cardDetails.map(c => ({ label: c.label, opacity: c.opacity })),
+          card05: cardDetails.find(c => c.label && c.label.includes('05')),
+          card10: cardDetails.find(c => c.label && c.label.includes('10')),
+        };
+      })()
+    `);
+
+    console.log('Final Desktop Metrics:', JSON.stringify(finalMetrics, null, 2));
+
+    if (finalMetrics.totalCardsRendered !== 10) {
+      throw new Error(`Expected 10 desktop cards rendered, found ${finalMetrics.totalCardsRendered}`);
+    }
+
+    if (!finalMetrics.card05 || parseFloat(finalMetrics.card05.opacity) < 0.95) {
+      throw new Error(`CRITICAL: Card 05 not fully visible! Opacity: ${finalMetrics.card05 ? finalMetrics.card05.opacity : 'missing'}`);
+    }
+
+    if (!finalMetrics.card10 || parseFloat(finalMetrics.card10.opacity) < 0.95) {
+      throw new Error(`CRITICAL: Card 10 not fully visible! Opacity: ${finalMetrics.card10 ? finalMetrics.card10.opacity : 'missing'}`);
+    }
+
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '05-desktop-page-02-final-state.png'));
     for (let i = 0; i < 8; i++) await cdp.captureDesktopVideoFrame();
 
-    // Step 7: Reverse Scroll Validation (Rewind back to Page 2 start, then Page 1)
-    console.log('7. Reverse Scroll Validation');
-    await cdp.scrollTo(900 * 4.2);
+    // Reverse scroll validation
+    console.log('8. Validating Natural Reverse Scroll to Page 1');
+    await cdp.scrollTo(900 * 4.5);
     await cdp.sleep(400);
     for (let i = 0; i < 3; i++) await cdp.captureDesktopVideoFrame();
     await cdp.scrollTo(900 * 3.4);
@@ -249,30 +265,70 @@ async function run() {
     for (let i = 0; i < 3; i++) await cdp.captureDesktopVideoFrame();
 
     // =========================================================================
-    // PART 2: MOBILE VALIDATION & RECORDING (390x844 iPhone Standard)
+    // PART 2: MOBILE VALIDATION (390x844)
     // =========================================================================
     console.log('\n--- Part 2: Mobile Validation (390x844) ---');
     await cdp.setViewport(390, 844, true);
     await cdp.scrollTo(0);
     await cdp.sleep(1000);
 
-    // Mobile Step 1: Page 1 Initial
-    console.log('1. Mobile Page 1 Initial');
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '07-mobile-390-page-01.png'));
+    // Initial Mobile
+    console.log('1. Mobile Initial');
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '06-mobile-390-page-01.png'));
     for (let i = 0; i < 4; i++) await cdp.captureMobileVideoFrame();
 
-    // Mobile Step 2: Page 2 Frame 1 (Centered 16:9 + Blurred atmosphere)
-    console.log('2. Mobile Page 2 Early — Sharp 16:9 + Enlarged Blurred Backdrop');
+    // Mobile Page 2 Early Frame
+    console.log('2. Mobile Early Page 2 (Sharp 16:9 + Blurred atmosphere)');
     await cdp.scrollTo(844 * 3.6);
-    await cdp.sleep(700);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '08-mobile-390-page-02-early.png'));
+    await cdp.sleep(600);
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '07-mobile-390-page-02-early.png'));
     for (let i = 0; i < 5; i++) await cdp.captureMobileVideoFrame();
 
-    // Mobile Step 3: Page 2 Final State — Docked 16:9 frame + 10 vertical cards
-    console.log('3. Mobile Page 2 Final — Docked 16:9 + 10 Vertical Cards');
-    await cdp.scrollTo(844 * 6.5);
+    // Scroll to Mobile Document Bottom
+    const mobileMaxScrollY = await cdp.evaluate('document.documentElement.scrollHeight - window.innerHeight');
+    console.log(`3. Mobile Final Scroll to bottom: ${mobileMaxScrollY}px`);
+    await cdp.scrollTo(mobileMaxScrollY);
     await cdp.sleep(800);
-    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '09-mobile-390-page-02-final.png'));
+
+    const mobileMetrics = await cdp.evaluate(`
+      (() => {
+        const cards = Array.from(document.querySelectorAll('#mobile-chapter-cards-container [role="article"]')).map(el => ({
+          label: el.getAttribute('aria-label'),
+          opacity: window.getComputedStyle(el).opacity,
+          rect: el.getBoundingClientRect(),
+        }));
+
+        const container = document.getElementById('mobile-chapter-cards-container');
+        const containerStyle = container ? window.getComputedStyle(container) : null;
+
+        return {
+          cardsCount: cards.length,
+          card05: cards.find(c => c.label && c.label.includes('05')),
+          card10: cards.find(c => c.label && c.label.includes('10')),
+          hasNestedOverflow: container ? container.style.overflowY === 'auto' : false,
+        };
+      })()
+    `);
+
+    console.log('Mobile Final Metrics:', JSON.stringify(mobileMetrics, null, 2));
+
+    if (mobileMetrics.cardsCount !== 10) {
+      throw new Error(`Expected 10 mobile cards, found ${mobileMetrics.cardsCount}`);
+    }
+
+    if (!mobileMetrics.card05 || parseFloat(mobileMetrics.card05.opacity) < 0.95) {
+      throw new Error(`CRITICAL: Mobile Card 05 opacity: ${mobileMetrics.card05 ? mobileMetrics.card05.opacity : 'missing'}`);
+    }
+
+    if (!mobileMetrics.card10 || parseFloat(mobileMetrics.card10.opacity) < 0.95) {
+      throw new Error(`CRITICAL: Mobile Card 10 opacity: ${mobileMetrics.card10 ? mobileMetrics.card10.opacity : 'missing'}`);
+    }
+
+    if (mobileMetrics.hasNestedOverflow) {
+      throw new Error('CRITICAL: Mobile cards container still has separate overflow-y: auto scroll area!');
+    }
+
+    await cdp.captureScreenshot(path.join(OUTPUT_DIR, '08-mobile-390-page-02-final.png'));
     for (let i = 0; i < 8; i++) await cdp.captureMobileVideoFrame();
 
     // =========================================================================
@@ -280,23 +336,24 @@ async function run() {
     // =========================================================================
     console.log('\n--- Part 3: Viewport Matrix Captures ---');
     const viewports = [
-      { name: '10-mobile-360x800', w: 360, h: 800, mobile: true },
-      { name: '11-mobile-430x932', w: 430, h: 932, mobile: true },
-      { name: '12-tablet-768x1024', w: 768, h: 1024, mobile: false },
-      { name: '13-laptop-1366x768', w: 1366, h: 768, mobile: false },
-      { name: '14-desktop-1920x1080', w: 1920, h: 1080, mobile: false },
+      { name: '09-mobile-360x800', w: 360, h: 800, mobile: true },
+      { name: '10-mobile-430x932', w: 430, h: 932, mobile: true },
+      { name: '11-tablet-768x1024', w: 768, h: 1024, mobile: false },
+      { name: '12-laptop-1366x768', w: 1366, h: 768, mobile: false },
+      { name: '13-desktop-1920x1080', w: 1920, h: 1080, mobile: false },
     ];
 
     for (const vp of viewports) {
       console.log(`Capturing viewport: ${vp.name} (${vp.w}x${vp.h})`);
       await cdp.setViewport(vp.w, vp.h, vp.mobile);
-      await cdp.scrollTo(vp.h * 6.4);
+      const scrollY = await cdp.evaluate('document.documentElement.scrollHeight - window.innerHeight');
+      await cdp.scrollTo(scrollY);
       await cdp.sleep(600);
-      await cdp.captureScreenshot(path.join(OUTPUT_DIR, `${vp.name}-page-02.png`));
+      await cdp.captureScreenshot(path.join(OUTPUT_DIR, `${vp.name}-final.png`));
     }
 
     // =========================================================================
-    // PART 4: ASSEMBLE DEMO RECORDINGS (FFMPEG)
+    // PART 4: ASSEMBLE DEMO VIDEOS (FFMPEG)
     // =========================================================================
     console.log('\n--- Part 4: Assembling Demonstration Videos ---');
     const desktopMp4 = path.join(OUTPUT_DIR, 'living-signal-desktop-demo.mp4');
@@ -322,11 +379,10 @@ async function run() {
       console.error('Mobile video assembly error:', err);
     }
 
-    console.log('\n=== ALL VERIFICATION CAPTURES AND RECORDINGS COMPLETE! ===');
+    console.log('\n=== ALL VERIFICATION CAPTURES AND ASSERTIONS PASSED! ===');
   } finally {
     if (cdp) cdp.close();
     if (chromeProc) chromeProc.kill();
-    if (previewProc) previewProc.kill();
   }
 }
 

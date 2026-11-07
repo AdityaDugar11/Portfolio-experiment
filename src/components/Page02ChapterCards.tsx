@@ -34,14 +34,15 @@ export const Page02ChapterCards: React.FC<Page02ChapterCardsProps> = ({
   const windowW = typeof window !== 'undefined' ? window.innerWidth : 1280;
 
   // Progressive reveal calculation matching the video's connection formation:
-  // Pair 0 (01 & 06): start 0.38, full 0.50
-  // Pair 1 (02 & 07): start 0.48, full 0.60
-  // Pair 2 (03 & 08): start 0.58, full 0.70
-  // Pair 3 (04 & 09): start 0.68, full 0.80
-  // Pair 4 (05 & 10): start 0.78, full 0.90
+  // Pair 0 (01 & 06): start 0.35, full 0.46
+  // Pair 1 (02 & 07): start 0.46, full 0.57
+  // Pair 2 (03 & 08): start 0.57, full 0.68
+  // Pair 3 (04 & 09): start 0.68, full 0.79
+  // Pair 4 (05 & 10): start 0.79, full 0.90
+  // Complete reveal finishes by 0.90, leaving final 10% as stable hold state
   const getCardRevealProgress = (pairIndex: number) => {
-    const start = 0.36 + pairIndex * 0.10;
-    const end = start + 0.12;
+    const start = 0.35 + pairIndex * 0.11;
+    const end = start + 0.11;
     if (progress <= start) return 0;
     if (progress >= end) return 1;
     return (progress - start) / (end - start);
@@ -79,13 +80,18 @@ export const Page02ChapterCards: React.FC<Page02ChapterCardsProps> = ({
   // Strictly preserves 16:9 video frame, no letterbox bars, unobstructed portrait
   // =========================================================================
   if (isMobile) {
+    const windowH = typeof window !== 'undefined' ? window.innerHeight : 844;
     const frameBottom = (renderedRect?.y || 0) + (renderedRect?.height || 220);
-    const mobileReveal = Math.min(Math.max((progress - 0.42) / 0.16, 0), 1);
+    const mobileReveal = Math.min(Math.max((progress - 0.30) / 0.12, 0), 1);
 
-    // Subtle upward scroll translation as visitor continues scrolling down through Page 2
-    // Allows effortless review of all 10 cards across the scroll runway
-    const scrollTranslateFactor = Math.min(Math.max((progress - 0.52) / 0.48, 0), 1);
-    const scrollOffset = scrollTranslateFactor * 260;
+    // Smooth upward translation driven by natural page scroll progression
+    // As progress goes from 0.35 to 0.90, cards translate up so all 10 cards glide into view
+    // By 0.90 progress, cards 05 and 10 are completely visible at the bottom of the container
+    const scrollFactor = Math.min(Math.max((progress - 0.35) / 0.55, 0), 1);
+    const visibleHeight = Math.max(300, windowH - frameBottom - 50);
+    const totalListHeight = CHAPTERS_DATA.length * 80;
+    const maxTranslate = Math.max(0, totalListHeight - visibleHeight + 40);
+    const translateY = -scrollFactor * maxTranslate;
 
     return (
       <div
@@ -95,6 +101,7 @@ export const Page02ChapterCards: React.FC<Page02ChapterCardsProps> = ({
           top: `${frameBottom + 12}px`,
           opacity: mobileReveal,
           transition: 'opacity 0.25s ease',
+          touchAction: 'pan-y', // Touch gestures pass to window scroll without nested trap
         }}
         aria-label="Ten Chapter Cards"
       >
@@ -111,17 +118,18 @@ export const Page02ChapterCards: React.FC<Page02ChapterCardsProps> = ({
           </span>
         </div>
 
-        {/* Clean Single-Column Vertical Arrangement */}
+        {/* Clean Single-Column Vertical Arrangement — Zero nested scroll area! Driven by page progression */}
         <div
-          className="w-full max-w-sm px-4 overflow-y-auto pb-8 space-y-3 pointer-events-auto touch-pan-y"
+          className="w-full max-w-sm px-4 pb-8 space-y-2.5 pointer-events-auto overflow-visible"
           style={{
-            maxHeight: `calc(100vh - ${frameBottom + 45}px)`,
-            transform: `translateY(${-scrollOffset * 0.5}px)`,
-            transition: 'transform 0.1s linear',
+            transform: `translateY(${translateY}px)`,
+            willChange: 'transform',
+            touchAction: 'pan-y',
           }}
         >
           {CHAPTERS_DATA.map((chapter, idx) => {
-            const cardReveal = Math.min(Math.max((progress - (0.42 + idx * 0.05)) / 0.10, 0), 1);
+            const pairIndex = idx < 5 ? idx : idx - 5;
+            const cardReveal = getCardRevealProgress(pairIndex);
             return (
               <div
                 key={chapter.id}
@@ -133,7 +141,7 @@ export const Page02ChapterCards: React.FC<Page02ChapterCardsProps> = ({
                   transform: `translateY(${(1 - cardReveal) * 16}px)`,
                   transition: 'opacity 0.25s ease, transform 0.25s ease',
                 }}
-                className="w-full bg-[#FAF6F0] text-[#2A1B16] rounded-2xl p-4 border border-[#E06D53]/20 shadow-[0_8px_24px_rgba(0,0,0,0.35)] active:scale-[0.98] transition-all cursor-default"
+                className="w-full bg-[#FAF6F0] text-[#2A1B16] rounded-2xl p-3.5 border border-[#E06D53]/20 shadow-[0_8px_24px_rgba(0,0,0,0.35)] active:scale-[0.98] transition-all cursor-default"
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">

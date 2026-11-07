@@ -187,15 +187,20 @@ export const App: React.FC = () => {
       // ========================================================
       // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE
       // Actual 240 WebP video frames scrubbed deterministically + 10 chapter cards
+      // end: 'bottom bottom' ensures progress reaches exactly 1.0 at document scroll bottom
       // ========================================================
       const page02Timeline = gsap.timeline({
         scrollTrigger: {
           trigger: page02RunwayRef.current,
           start: 'top top',
-          end: 'bottom top',
+          end: 'bottom bottom',
           scrub: 0.5,
           onUpdate: (self) => {
-            setPage02Progress(self.progress);
+            const p = Math.min(Math.max(self.progress, 0), 1);
+            setPage02Progress(p);
+          },
+          onToggle: (self) => {
+            if (self.progress >= 0.99) setPage02Progress(1.0);
           },
         },
       });
@@ -312,7 +317,7 @@ export const App: React.FC = () => {
       <div
         ref={page02RunwayRef}
         id="page-02-runway"
-        className="relative w-full h-[320vh] pointer-events-none"
+        className="relative w-full h-[380vh] pointer-events-none"
         aria-hidden="true"
       />
 
