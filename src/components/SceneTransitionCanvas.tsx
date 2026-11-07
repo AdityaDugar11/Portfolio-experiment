@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { renderMobileFrameToContext } from '../utils/mobileFrameHelper';
 
 interface SceneTransitionCanvasProps {
   progress: number; // 0.0 (Page 1) to 1.0 (Page 2)
@@ -57,40 +58,68 @@ float snoise(vec2 v) {
 
 void main() {
   vec2 uv = vUv;
+  bool isMobile = uResolution.x < 768.0;
+
+  // Aspect-normalized noise coordinates on mobile to prevent vertical stretching
+  vec2 noiseCoord = isMobile
+    ? vec2(uv.x, uv.y * (uResolution.y / uResolution.x) * 0.55)
+    : uv;
 
   // Organic multi-octave noise field
-  float n1 = snoise(uv * 3.4 + vec2(uTime * 0.12, uTime * 0.08));
-  float n2 = snoise(uv * 6.8 - vec2(uTime * 0.14, uTime * 0.06));
+  float n1 = snoise(noiseCoord * 3.4 + vec2(uTime * 0.12, uTime * 0.08));
+  float n2 = snoise(noiseCoord * 6.8 - vec2(uTime * 0.14, uTime * 0.06));
   float noise = n1 * 0.65 + n2 * 0.35;
 
   // Peak distortion happens at mid-scroll (0.5 progress)
   float distPeak = sin(clamp(uProgress, 0.0, 1.0) * 3.14159265);
-  float displacement = noise * distPeak * 0.075;
+  
+  // Controlled displacement on mobile to avoid extreme horizontal tear
+  float dispScale = isMobile ? 0.038 : 0.075;
+  float displacement = noise * distPeak * dispScale;
 
   // Sweep transition boundary from bottom-left to top-right with noise modulation
-  float edgeWidth = 0.20;
-  float wave = (uv.y * 0.65 + uv.x * 0.35) + noise * 0.22;
+  float edgeWidth = isMobile ? 0.22 : 0.20;
+  float wave = isMobile
+    ? (uv.y * 0.60 + uv.x * 0.40) + noise * 0.16
+    : (uv.y * 0.65 + uv.x * 0.35) + noise * 0.22;
   float p = uProgress * (1.0 + edgeWidth * 2.0) - edgeWidth;
   float mixFactor = smoothstep(p - edgeWidth, p + edgeWidth, wave);
 
-  // Subtle chromatic separation on outgoing Scene A
-  vec2 uvA = uv + vec2(displacement, -displacement * 0.5);
-  float rA = texture2D(uTextureA, uvA + vec2(distPeak * 0.016, 0.0)).r;
+  // Subtle chromatic separation
+  float chromaA = isMobile ? distPeak * 0.007 : distPeak * 0.016;
+  float chromaB = isMobile ? distPeak * 0.005 : distPeak * 0.012;
+
+  // Sample outgoing Scene A: on mobile, match BackgroundVideo's object-cover object-[22%_center]
+  vec2 uvA;
+  if (isMobile) {
+    float spanX = (uResolution.x / uResolution.y) / (1280.0 / 720.0);
+    float startX = clamp(0.22 - spanX * 0.5, 0.0, 1.0 - spanX);
+    vec2 mappedUvA = vec2(startX + uv.x * spanX, uv.y);
+    uvA = mappedUvA + vec2(displacement * spanX, -displacement * 0.5);
+    uvA = clamp(uvA, vec2(startX + 0.001, 0.001), vec2(startX + spanX - 0.001, 0.999));
+  } else {
+    uvA = uv + vec2(displacement, -displacement * 0.5);
+  }
+
+  float rA = texture2D(uTextureA, uvA + vec2(chromaA, 0.0)).r;
   float gA = texture2D(uTextureA, uvA).g;
-  float bA = texture2D(uTextureA, uvA - vec2(distPeak * 0.016, 0.0)).b;
+  float bA = texture2D(uTextureA, uvA - vec2(chromaA, 0.0)).b;
   vec4 colA = vec4(rA, gA, bA, 1.0);
 
-  // Subtle chromatic separation on incoming Scene B
+  // Sample incoming Scene B
   vec2 uvB = uv - vec2(displacement * 0.5, displacement * 0.7);
-  float rB = texture2D(uTextureB, uvB + vec2(distPeak * 0.012, 0.0)).r;
+  uvB = clamp(uvB, vec2(0.001), vec2(0.999));
+  float rB = texture2D(uTextureB, uvB + vec2(chromaB, 0.0)).r;
   float gB = texture2D(uTextureB, uvB).g;
-  float bB = texture2D(uTextureB, uvB - vec2(distPeak * 0.012, 0.0)).b;
+  float bB = texture2D(uTextureB, uvB - vec2(chromaB, 0.0)).b;
   vec4 colB = vec4(rB, gB, bB, 1.0);
 
   // Luminous peach/coral boundary glow on the tear edge
   float glowIntensity = (1.0 - smoothstep(0.0, edgeWidth * 0.8, abs(wave - p))) * distPeak;
-  vec3 coralGlow = vec3(0.88, 0.43, 0.33) * glowIntensity * 2.4;
-  vec3 peachGlow = vec3(0.96, 0.72, 0.59) * glowIntensity * 1.6;
+  float glowMult = isMobile ? 1.2 : 2.4;
+  float peachMult = isMobile ? 0.9 : 1.6;
+  vec3 coralGlow = vec3(0.88, 0.43, 0.33) * glowIntensity * glowMult;
+  vec3 peachGlow = vec3(0.96, 0.72, 0.59) * glowIntensity * peachMult;
   vec3 totalGlow = mix(coralGlow, peachGlow, 0.5 + 0.5 * sin(uTime * 2.5));
 
   vec4 blendedColor = mix(colB, colA, mixFactor) + vec4(totalGlow, 0.0);
@@ -156,11 +185,40 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
     defaultTextureA.minFilter = THREE.LinearFilter;
     defaultTextureA.magFilter = THREE.LinearFilter;
 
-    // Incoming Scene B: Page 2 actual first video frame
-    const textureB = textureLoader.load('/frames/page-02/frame_0001.webp');
-    textureB.colorSpace = THREE.SRGBColorSpace;
-    textureB.minFilter = THREE.LinearFilter;
-    textureB.magFilter = THREE.LinearFilter;
+    // Incoming Scene B: Desktop uses original landscape frame; Mobile uses exact matching 9:16 portrait crop
+    const isMobile = width < 768;
+    let textureB: THREE.Texture;
+    let offscreenCanvas: HTMLCanvasElement | null = null;
+    let cachedSourceImg: HTMLImageElement | null = null;
+
+    if (isMobile) {
+      offscreenCanvas = document.createElement('canvas');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+      offscreenCanvas.width = Math.round(width * dpr);
+      offscreenCanvas.height = Math.round(height * dpr);
+
+      const canvasTex = new THREE.CanvasTexture(offscreenCanvas);
+      canvasTex.colorSpace = THREE.SRGBColorSpace;
+      canvasTex.minFilter = THREE.LinearFilter;
+      canvasTex.magFilter = THREE.LinearFilter;
+      textureB = canvasTex;
+
+      const img = new Image();
+      img.src = '/frames/page-02/frame_0001.webp';
+      img.onload = () => {
+        cachedSourceImg = img;
+        const ctx = offscreenCanvas?.getContext('2d', { alpha: false });
+        if (ctx && offscreenCanvas) {
+          renderMobileFrameToContext(ctx, img, width, height, dpr);
+          canvasTex.needsUpdate = true;
+        }
+      };
+    } else {
+      textureB = textureLoader.load('/frames/page-02/frame_0001.webp');
+      textureB.colorSpace = THREE.SRGBColorSpace;
+      textureB.minFilter = THREE.LinearFilter;
+      textureB.magFilter = THREE.LinearFilter;
+    }
 
     // Create shader material
     const uniforms = {
@@ -215,10 +273,20 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
     const handleResize = () => {
       const newW = window.innerWidth;
       const newH = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
       renderer.setSize(newW, newH);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
+      renderer.setPixelRatio(dpr);
       if (materialRef.current) {
         materialRef.current.uniforms.uResolution.value.set(newW, newH);
+      }
+      if (newW < 768 && offscreenCanvas && cachedSourceImg) {
+        offscreenCanvas.width = Math.round(newW * dpr);
+        offscreenCanvas.height = Math.round(newH * dpr);
+        const ctx = offscreenCanvas.getContext('2d', { alpha: false });
+        if (ctx) {
+          renderMobileFrameToContext(ctx, cachedSourceImg, newW, newH, dpr);
+          textureB.needsUpdate = true;
+        }
       }
     };
     window.addEventListener('resize', handleResize, { passive: true });

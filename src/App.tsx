@@ -8,6 +8,7 @@ import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
 import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
 import { Page02Scene } from './components/Page02Scene';
+import { Page02MobileExperience } from './components/Page02MobileExperience';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -185,27 +186,29 @@ export const App: React.FC = () => {
       }
 
       // ========================================================
-      // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE
+      // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE (DESKTOP)
       // Actual 240 WebP video frames scrubbed deterministically + 10 chapter cards
       // end: 'bottom bottom' ensures progress reaches exactly 1.0 at document scroll bottom
       // ========================================================
-      const page02Timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: page02RunwayRef.current,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 0.5,
-          onUpdate: (self) => {
-            const p = Math.min(Math.max(self.progress, 0), 1);
-            setPage02Progress(p);
+      if (window.innerWidth >= 768 && page02RunwayRef.current) {
+        const page02Timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: page02RunwayRef.current,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0.5,
+            onUpdate: (self) => {
+              const p = Math.min(Math.max(self.progress, 0), 1);
+              setPage02Progress(p);
+            },
+            onToggle: (self) => {
+              if (self.progress >= 0.99) setPage02Progress(1.0);
+            },
           },
-          onToggle: (self) => {
-            if (self.progress >= 0.99) setPage02Progress(1.0);
-          },
-        },
-      });
+        });
 
-      page02Timeline.to({}, { duration: 1.0 }, 0);
+        page02Timeline.to({}, { duration: 1.0 }, 0);
+      }
     });
 
     return () => {
@@ -224,6 +227,13 @@ export const App: React.FC = () => {
   };
 
   const handleExploreWork = () => {
+    if (window.innerWidth < 768) {
+      const ch06 = document.getElementById('chapter-card-chapter-06');
+      if (ch06) {
+        ch06.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+    }
     if (lenisRef.current && page02RunwayRef.current) {
       // Scroll smoothly to Page 02 where Chapter 06 (The Work I Choose to Show) is anchored
       const targetY = page02RunwayRef.current.offsetTop + page02RunwayRef.current.offsetHeight * 0.55;
@@ -258,14 +268,14 @@ export const App: React.FC = () => {
       />
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER: THE LIVING SIGNAL
+          PAGE 02 VISUAL LAYER: THE LIVING SIGNAL (DESKTOP & TABLET >= 768px)
           Actual 240 WebP video frames + 10 chapter cards attached
           to the actual terminal nodes. Strictly NO Page 3.
           ======================================================== */}
       <div
         ref={page02SceneRef}
         id="page-02-scene"
-        className="fixed inset-0 z-20 will-change-transform"
+        className="fixed inset-0 z-20 will-change-transform hidden md:block"
         style={{
           opacity: transitionProgress > 0 ? Math.min(transitionProgress * 1.25, 1) : 0,
           pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
@@ -313,13 +323,27 @@ export const App: React.FC = () => {
         aria-hidden="true"
       />
 
-      {/* Runway 3: Page 02 Living Signal (240-frame sequence & 10 cards) */}
+      {/* Runway 3: Page 02 Living Signal (240-frame sequence & 10 cards - Desktop only) */}
       <div
         ref={page02RunwayRef}
         id="page-02-runway"
-        className="relative w-full h-[380vh] pointer-events-none"
+        className="relative w-full h-[380vh] pointer-events-none hidden md:block"
         aria-hidden="true"
       />
+
+      {/* ========================================================
+          PAGE 02 MOBILE EXPERIENCE (< 768px)
+          Dedicated Portrait Character Animation + 10 Chapter Cards
+          in normal document flow. Strictly NO Page 3.
+          ======================================================== */}
+      <div className="block md:hidden relative w-full z-20">
+        <Page02MobileExperience
+          transitionProgress={transitionProgress}
+          onExploreWork={handleExploreWork}
+          onStartJourney={handleStartJourney}
+          onOpenContact={() => setIsContactOpen(true)}
+        />
+      </div>
 
       {/* ========================================================
           ACCESSIBLE CONTACT MODAL DIALOG
