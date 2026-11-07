@@ -101,8 +101,7 @@ export const App: React.FC = () => {
       const mainNav = document.getElementById('main-navigation');
       const scrollIndicator = document.getElementById('scroll-indicator');
 
-      // Set initial Page 2 visibility state
-      gsap.set(page02SceneRef.current, { opacity: 0, pointerEvents: 'none' });
+      // Set initial transform states cleanly via GSAP (avoids inline style conflicts)
 
       // ========================================================
       // TIMELINE 1: PAGE 01 SCROLL (Approved Exit Choreography)
@@ -195,16 +194,6 @@ export const App: React.FC = () => {
         );
       }
 
-      // Page 02 scene smoothly fades in as transition completes
-      if (page02SceneRef.current) {
-        transitionTimeline.fromTo(
-          page02SceneRef.current,
-          { opacity: 0, pointerEvents: 'none' },
-          { opacity: 1, pointerEvents: 'auto', ease: 'none', duration: 1.0 },
-          0.1
-        );
-      }
-
       // ========================================================
       // TIMELINE 3: PAGE 02 ORBITAL PROGRESSION
       // Character centered, 3 luminous rings ignite, 10 connectors draw, 10 cards reveal
@@ -240,21 +229,6 @@ export const App: React.FC = () => {
       });
 
       collectionTimeline.to({}, { duration: 1.0 }, 0);
-
-      // When reaching Page 03, gently fade Page 2 layer so Page 03 interactive deck takes focus
-      if (page02SceneRef.current) {
-        gsap.to(page02SceneRef.current, {
-          scrollTrigger: {
-            trigger: page03RunwayRef.current,
-            start: 'top 30%',
-            end: 'top top',
-            scrub: 0.5,
-          },
-          opacity: 0,
-          pointerEvents: 'none',
-          ease: 'power1.inOut',
-        });
-      }
     });
 
     return () => {
@@ -310,6 +284,10 @@ export const App: React.FC = () => {
         ref={page02SceneRef}
         id="page-02-scene"
         className="fixed inset-0 z-20 will-change-transform"
+        style={{
+          opacity: transitionProgress > 0 ? Math.min(transitionProgress * 1.25, 1) : 0,
+          pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
+        }}
       >
         <Page02TheLivingSignal
           progress={page02Progress}
