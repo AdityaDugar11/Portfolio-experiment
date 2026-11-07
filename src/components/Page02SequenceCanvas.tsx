@@ -1,27 +1,13 @@
-import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
-
-export interface RenderedRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  scale: number;
-}
+import { useEffect, useRef, useCallback, forwardRef } from 'react';
 
 interface Page02SequenceCanvasProps {
   progress: number; // 0.0 to 1.0 (scrubbed directly by GSAP ScrollTrigger)
-  onRenderRectChange?: (rect: RenderedRect) => void;
   className?: string;
-}
-
-export interface Page02CanvasHandle {
-  getRenderedRect: () => RenderedRect | null;
 }
 
 const TOTAL_FRAMES = 240;
 const FRAME_WIDTH = 1280;
 const FRAME_HEIGHT = 720;
-const FRAME_ASPECT = FRAME_WIDTH / FRAME_HEIGHT;
 
 const getFrameUrl = (index: number): string => {
   const frameNum = Math.min(Math.max(index + 1, 1), TOTAL_FRAMES);
@@ -29,20 +15,14 @@ const getFrameUrl = (index: number): string => {
   return `/frames/page-02/frame_${padded}.webp`;
 };
 
-export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02SequenceCanvasProps>(
-  ({ progress, onRenderRectChange, className = '' }, ref) => {
+export const Page02SequenceCanvas = forwardRef<HTMLDivElement, Page02SequenceCanvasProps>(
+  ({ progress, className = '' }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const imageCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
     const loadingSetRef = useRef<Set<number>>(new Set());
     const lastDrawnFrameRef = useRef<number>(-1);
     const targetFrameRef = useRef<number>(0);
-    const renderedRectRef = useRef<RenderedRect>({ x: 0, y: 0, width: 0, height: 0, scale: 1 });
     const animFrameRef = useRef<number | null>(null);
-
-    // Expose rendered rectangle to parent for SVG connector tracking
-    useImperativeHandle(ref, () => ({
-      getRenderedRect: () => renderedRectRef.current,
-    }));
 
     // Preload a single frame with async decode
     const preloadFrame = useCallback((index: number): Promise<HTMLImageElement> => {
@@ -128,7 +108,6 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
 
     // Compute target frame index from scroll progress (0..1 -> 0..239)
     useEffect(() => {
-      // Reduced motion check
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReducedMotion) {
         targetFrameRef.current = progress > 0.5 ? TOTAL_FRAMES - 1 : 0;
@@ -140,7 +119,7 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
       triggerSlidingPreload(targetFrameRef.current);
     }, [progress, triggerSlidingPreload]);
 
-    // Draw frame to canvas preserving 16:9 aspect ratio and tracking bounding box
+    // Draw frame to canvas using COVER mode so mobile, tablet, and desktop fill 100% of viewport with ZERO black letterboxing
     const drawCurrentFrame = useCallback(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -152,7 +131,6 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
       const windowH = window.innerHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
 
-      // Set canvas physical buffer dimensions
       const targetCanvasW = Math.round(windowW * dpr);
       const targetCanvasH = Math.round(windowH * dpr);
       if (canvas.width !== targetCanvasW || canvas.height !== targetCanvasH) {
@@ -160,42 +138,13 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
         canvas.height = targetCanvasH;
       }
 
-      // Calculate 16:9 'contain' dimensions to ensure character, 3 rings and 10 endpoints remain 100% visible
-      let drawW: number;
-      let drawH: number;
-      const screenAspect = windowW / windowH;
-
-      if (screenAspect > FRAME_ASPECT) {
-        // Wider screen: fit height, letterbox left/right
-        drawH = windowH;
-        drawW = windowH * FRAME_ASPECT;
-      } else {
-        // Taller/narrower screen: fit width, letterbox top/bottom
-        drawW = windowW;
-        drawH = windowW / FRAME_ASPECT;
-      }
-
-      const drawX = (windowW - drawW) / 2;
-      const drawY = (windowH - drawH) / 2;
-
-      // Update rendered rect for coordinate mapping
-      const rect: RenderedRect = {
-        x: drawX,
-        y: drawY,
-        width: drawW,
-        height: drawH,
-        scale: drawW / FRAME_WIDTH,
-      };
-
-      if (
-        renderedRectRef.current.x !== rect.x ||
-        renderedRectRef.current.y !== rect.y ||
-        renderedRectRef.current.width !== rect.width ||
-        renderedRectRef.current.height !== rect.height
-      ) {
-        renderedRectRef.current = rect;
-        onRenderRectChange?.(rect);
-      }
+      // Responsive COVER calculation:
+      // Computes the scale factor to ensure the pastel sky and character completely fill the screen
+      const scale = Math.max(windowW / FRAME_WIDTH, windowH / FRAME_HEIGHT);
+      const drawW = Math.round(FRAME_WIDTH * scale);
+      const drawH = Math.round(FRAME_HEIGHT * scale);
+      const drawX = Math.round((windowW - drawW) / 2);
+      const drawY = Math.round((windowH - drawH) / 2);
 
       const target = targetFrameRef.current;
       const cache = imageCacheRef.current;
@@ -204,7 +153,6 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
       let imgToDraw: HTMLImageElement | undefined = cache.get(target);
 
       if (!imgToDraw || !imgToDraw.complete) {
-        // Find closest cached frame
         let closestDist = Infinity;
         let closestIndex = lastDrawnFrameRef.current;
 
@@ -231,9 +179,9 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
         ctx.restore();
         lastDrawnFrameRef.current = target;
       }
-    }, [onRenderRectChange]);
+    }, []);
 
-    // Master render loop using requestAnimationFrame to coalesce rapid scroll updates
+    // Master render loop using requestAnimationFrame
     useEffect(() => {
       let active = true;
 
@@ -259,8 +207,9 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
 
     return (
       <div
+        ref={ref}
         id="page-02-sequence-container"
-        className={`fixed inset-0 overflow-hidden pointer-events-none select-none ${className}`}
+        className={`fixed inset-0 overflow-hidden pointer-events-none select-none bg-[#181210] ${className}`}
         aria-hidden="true"
       >
         <canvas
@@ -271,8 +220,8 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
             transform: 'translateZ(0)',
           }}
         />
-        {/* Soft atmospheric radial gradient at outer screen edges to blend with surrounding canvas */}
-        <div className="absolute inset-0 bg-radial-gradient pointer-events-none opacity-40 mix-blend-multiply" />
+        {/* Soft atmospheric gradient vignette blending edges seamlessly */}
+        <div className="absolute inset-0 bg-radial-gradient pointer-events-none opacity-25 mix-blend-multiply" />
       </div>
     );
   }

@@ -6,36 +6,36 @@ import { BackgroundVideo } from './components/BackgroundVideo';
 import { Navigation } from './components/Navigation';
 import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
-import { Page02SequenceCanvas, RenderedRect } from './components/Page02SequenceCanvas';
-import { ChapterCardsOverlay } from './components/ChapterCardsOverlay';
-import { ChapterModal } from './components/ChapterModal';
+import { Page02SequenceCanvas } from './components/Page02SequenceCanvas';
+import { Page03CardDeck } from './components/Page03CardDeck';
+import { ChapterReader } from './components/ChapterReader';
 import { ChapterItem, CHAPTERS_DATA } from './data/chaptersData';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export const App: React.FC = () => {
-  // Modal & Selection States
+  // Modal & Reader States
   const [isContactOpen, setIsContactOpen] = useState(false);
-  const [selectedChapter, setSelectedChapter] = useState<ChapterItem | null>(null);
+  const [activeReadingChapter, setActiveReadingChapter] = useState<ChapterItem | null>(null);
 
-  // Progress States
-  const [page01Progress, setPage01Progress] = useState(0);
-  const [page02Progress, setPage02Progress] = useState(0);
-  const [activePage, setActivePage] = useState<'page-01' | 'page-02'>('page-01');
-
-  // Canvas Tracking
-  const [renderedRect, setRenderedRect] = useState<RenderedRect | null>(null);
-
-  // Audio State (Maintained exactly as approved in Page 01)
+  // Audio State (Unchanged from approved Page 01)
   const [isMuted, setIsMuted] = useState(true);
 
-  // Runway & Element Refs
+  // Runway Refs
   const page01RunwayRef = useRef<HTMLDivElement>(null);
+  const transitionRunwayRef = useRef<HTMLDivElement>(null);
   const page02RunwayRef = useRef<HTMLDivElement>(null);
+  const page03RunwayRef = useRef<HTMLDivElement>(null);
+
+  // Visual Scene Layer Refs
+  const page01SceneRef = useRef<HTMLDivElement>(null);
   const videoWrapperRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
-  const page02LayerRef = useRef<HTMLDivElement>(null);
+  const page02SceneRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
+
+  // Scroll Progress Tracking for Page 02 Sequence Canvas (0.0 to 1.0)
+  const [page02Progress, setPage02Progress] = useState(0);
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -81,78 +81,45 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // 2. Setup GSAP ScrollTrigger Choreography (Page 01 Exit & Page 02 Entrance/Orbital scrubbing)
+  // 2. Setup GSAP ScrollTrigger Choreography
   useEffect(() => {
-    if (!page01RunwayRef.current || !page02RunwayRef.current) return;
+    if (
+      !page01RunwayRef.current ||
+      !transitionRunwayRef.current ||
+      !page02RunwayRef.current ||
+      !page03RunwayRef.current
+    )
+      return;
 
     const ctx = gsap.context(() => {
       const heroTextBlock = document.getElementById('hero-text-block');
       const mainNav = document.getElementById('main-navigation');
       const scrollIndicator = document.getElementById('scroll-indicator');
 
-      // --- PAGE 01 SCROLL TIMELINE (Approved Exit Choreography) ---
+      // Set initial transform states cleanly via GSAP (avoids inline style conflicts)
+      gsap.set(page02SceneRef.current, { yPercent: 100, opacity: 0 });
+
+      // ========================================================
+      // TIMELINE 1: PAGE 01 SCROLL (Approved Exit Choreography)
+      // ========================================================
       const page01Timeline = gsap.timeline({
         scrollTrigger: {
           trigger: page01RunwayRef.current,
           start: 'top top',
           end: 'bottom top',
           scrub: 0.6,
-          onUpdate: (self) => {
-            setPage01Progress(self.progress);
-            if (self.progress < 0.85) {
-              setActivePage('page-01');
-            }
-          },
         },
       });
 
-      // Master normalized duration
       page01Timeline.to({}, { duration: 1.0 }, 0);
 
       // Camera Movement on Background Video Layer (0% to 100%)
       if (videoWrapperRef.current) {
         page01Timeline.fromTo(
           videoWrapperRef.current,
-          {
-            scale: 1.0,
-            yPercent: 0,
-            opacity: 1.0,
-          },
-          {
-            scale: 1.14,
-            yPercent: -2,
-            opacity: 1.0,
-            ease: 'none',
-            duration: 0.75,
-          },
+          { scale: 1.0, yPercent: 0 },
+          { scale: 1.14, yPercent: -2, ease: 'none', duration: 1.0 },
           0
-        );
-
-        // Smooth cinematic dissolve out into Page 02 environment (0.75 to 1.0)
-        page01Timeline.to(
-          videoWrapperRef.current,
-          {
-            opacity: 0.0,
-            ease: 'power2.inOut',
-            duration: 0.25,
-          },
-          0.75
-        );
-      }
-
-      // Smooth cinematic dissolve in of Page 02 environment and character (0.70 to 1.0)
-      if (page02LayerRef.current) {
-        page01Timeline.fromTo(
-          page02LayerRef.current,
-          {
-            opacity: 0.0,
-          },
-          {
-            opacity: 1.0,
-            ease: 'power2.inOut',
-            duration: 0.30,
-          },
-          0.70
         );
       }
 
@@ -182,12 +149,7 @@ export const App: React.FC = () => {
         page01Timeline.fromTo(
           mainNav,
           { opacity: 1, y: 0 },
-          {
-            opacity: 0,
-            y: -35,
-            ease: 'power2.inOut',
-            duration: 0.26,
-          },
+          { opacity: 0, y: -35, ease: 'power2.inOut', duration: 0.26 },
           0.12
         );
       }
@@ -197,33 +159,79 @@ export const App: React.FC = () => {
         page01Timeline.fromTo(
           scrollIndicator,
           { opacity: 1 },
-          {
-            opacity: 0,
-            ease: 'power2.inOut',
-            duration: 0.20,
-          },
+          { opacity: 0, ease: 'power2.inOut', duration: 0.20 },
           0.12
         );
       }
 
-      // --- PAGE 02 SCROLL TIMELINE (240-Frame Sequence & 10 Connections Scrubbing) ---
+      // ========================================================
+      // TIMELINE 2: CINEMATIC PAGE 01 -> PAGE 02 TRANSITION ZONE
+      // (Page 01 moves up and away; Page 02 rises from below and fills screen)
+      // ========================================================
+      const transitionTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: transitionRunwayRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.6,
+        },
+      });
+
+      transitionTimeline.to({}, { duration: 1.0 }, 0);
+
+      // Page 01 moves up and scales slightly back as it exits
+      if (page01SceneRef.current) {
+        transitionTimeline.fromTo(
+          page01SceneRef.current,
+          { yPercent: 0, scale: 1.0, opacity: 1.0 },
+          { yPercent: -40, scale: 0.95, opacity: 0.0, ease: 'power1.inOut', duration: 0.9 },
+          0
+        );
+      }
+
+      // Page 02 scene rises smoothly from below the viewport (100% -> 0%) and fills screen
+      if (page02SceneRef.current) {
+        transitionTimeline.fromTo(
+          page02SceneRef.current,
+          { yPercent: 100, opacity: 0.2 },
+          { yPercent: 0, opacity: 1.0, ease: 'power2.out', duration: 1.0 },
+          0
+        );
+      }
+
+      // ========================================================
+      // TIMELINE 3: PAGE 02 SEQUENCE SCRUBBING (240 Frames)
+      // (Character centered, 3 luminous rings & 10 branches form progressively)
+      // ========================================================
       const page02Timeline = gsap.timeline({
         scrollTrigger: {
           trigger: page02RunwayRef.current,
           start: 'top top',
-          end: 'bottom bottom',
+          end: 'bottom top',
           scrub: 0.5,
           onUpdate: (self) => {
             setPage02Progress(self.progress);
-            if (self.progress > 0.05) {
-              setActivePage('page-02');
-            }
           },
         },
       });
 
-      // Directly maps Page 02 scroll runway (0.0 to 1.0) to the sequence progress
       page02Timeline.to({}, { duration: 1.0 }, 0);
+
+      // At the end of Page 02, as user scrolls towards Page 03:
+      // Page 02 gently slides up to reveal Page 03 deck
+      if (page02SceneRef.current) {
+        gsap.to(page02SceneRef.current, {
+          scrollTrigger: {
+            trigger: page03RunwayRef.current,
+            start: 'top bottom',
+            end: 'top top',
+            scrub: 0.6,
+          },
+          yPercent: -100,
+          opacity: 0.2,
+          ease: 'power1.inOut',
+        });
+      }
     });
 
     return () => {
@@ -233,68 +241,46 @@ export const App: React.FC = () => {
 
   // Smooth scroll triggers
   const handleStartJourney = () => {
-    if (lenisRef.current && page02RunwayRef.current) {
-      // Scroll to start of Page 02
-      const targetY = page02RunwayRef.current.offsetTop;
+    if (lenisRef.current && transitionRunwayRef.current) {
+      const targetY = transitionRunwayRef.current.offsetTop;
       lenisRef.current.scrollTo(targetY, { duration: 1.8 });
     } else {
-      page02RunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleReturnToStart = () => {
-    if (lenisRef.current) {
-      lenisRef.current.scrollTo(0, { duration: 1.6 });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      transitionRunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   const handleExploreWork = () => {
-    // If Chapter 06 is clicked or explore work triggered:
     const ch06 = CHAPTERS_DATA.find((c) => c.id === 'chapter-06');
-    if (ch06) setSelectedChapter(ch06);
-  };
-
-  const handleSelectChapter = (chapter: ChapterItem) => {
-    if (chapter.ctaAction === 'contact') {
-      setIsContactOpen(true);
-    } else if (chapter.ctaAction === 'start') {
-      handleReturnToStart();
-    } else {
-      setSelectedChapter(chapter);
-    }
+    if (ch06) setActiveReadingChapter(ch06);
   };
 
   return (
-    <div className="relative min-h-screen bg-[#181210] text-[#FAF7F2]">
+    <div className="relative min-h-screen bg-[#140F0E] text-[#FAF7F2] overflow-x-hidden">
       {/* ========================================================
           PAGE 01 VISUAL LAYER (Background Video & Atmosphere)
           ======================================================== */}
-      <BackgroundVideo
-        ref={videoWrapperRef}
-        videoRef={videoElementRef}
-      />
+      <div
+        ref={page01SceneRef}
+        id="page-01-scene"
+        className="fixed inset-0 z-0 will-change-transform"
+      >
+        <BackgroundVideo
+          ref={videoWrapperRef}
+          videoRef={videoElementRef}
+        />
+      </div>
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER (240-Frame Sequence Canvas & Overlays)
+          PAGE 02 VISUAL LAYER (240-Frame Sequence Canvas)
+          Exclusively the Character, Pastel Sky, 3 Rings, 10 Nodes
+          Zero cards, zero modals, zero debug overlays
           ======================================================== */}
       <div
-        ref={page02LayerRef}
-        id="page-02-visual-layer"
-        className="fixed inset-0 z-10 pointer-events-none opacity-0 will-change-opacity"
-        aria-hidden="true"
+        ref={page02SceneRef}
+        id="page-02-scene"
+        className="fixed inset-0 z-10 will-change-transform"
       >
-        <Page02SequenceCanvas
-          progress={page02Progress}
-          onRenderRectChange={setRenderedRect}
-        />
-
-        <ChapterCardsOverlay
-          progress={page02Progress}
-          renderedRect={renderedRect}
-          onSelectChapter={handleSelectChapter}
-        />
+        <Page02SequenceCanvas progress={page02Progress} />
       </div>
 
       {/* ========================================================
@@ -317,53 +303,67 @@ export const App: React.FC = () => {
       />
 
       {/* ========================================================
-          MODALS & DIALOGS
-          ======================================================== */}
-      {/* Page 01 Accessible Contact Modal Dialog */}
-      <ContactModal
-        isOpen={isContactOpen}
-        onClose={() => setIsContactOpen(false)}
-      />
-
-      {/* Page 02 Accessible Chapter Narrative Modal */}
-      <ChapterModal
-        chapter={selectedChapter}
-        onClose={() => setSelectedChapter(null)}
-        onOpenContact={() => setIsContactOpen(true)}
-        onExploreWork={handleExploreWork}
-        onReturnToStart={handleReturnToStart}
-      />
-
-      {/* ========================================================
-          SCROLL RUNWAYS (GSAP ScrollTrigger Pinned & Scrubbed)
+          SCROLL RUNWAYS (GSAP ScrollTrigger Synchronized)
           ======================================================== */}
       {/* Runway 1: Page 01 (Cinematic Video Zoom & Editorial Text Exit) */}
       <div
         ref={page01RunwayRef}
         id="page-01-runway"
-        className="relative w-full h-[220vh] pointer-events-none"
+        className="relative w-full h-[200vh] pointer-events-none"
         aria-hidden="true"
       />
 
-      {/* Runway 2: Page 02 (240-Frame Scrubbing, 3 Rings & 10 Connections Reveal) */}
+      {/* Runway 2: Transition Zone (Page 01 moves away, Page 02 rises to fill viewport) */}
+      <div
+        ref={transitionRunwayRef}
+        id="page-01-to-02-transition-runway"
+        className="relative w-full h-[150vh] pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Runway 3: Page 02 Orbital Progression (240 Frames scrubbed) */}
       <div
         ref={page02RunwayRef}
         id="page-02-runway"
-        className="relative w-full h-[350vh] pointer-events-none"
+        className="relative w-full h-[320vh] pointer-events-none"
         aria-hidden="true"
       />
 
       {/* ========================================================
-          PERSISTENT PAGE & PROGRESS INDICATOR
+          PAGE 03: THE CHAPTER CARD DECK & STORY JOURNEY
           ======================================================== */}
-      <div className="fixed bottom-4 left-6 z-30 flex items-center gap-2 text-[10px] tracking-widest uppercase font-mono text-signal-ivory/60 pointer-events-none drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-        <span className="w-1.5 h-1.5 rounded-full bg-signal-coral shadow-[0_0_6px_#E06D53]" />
-        <span>
-          {activePage === 'page-01'
-            ? `Page 01 · Initial Exit · ${(page01Progress * 100).toFixed(0)}%`
-            : `Page 02 · The Living Signal · Frame ${Math.round(page02Progress * 239) + 1}/240 (${(page02Progress * 100).toFixed(0)}%)`}
-        </span>
-      </div>
+      <section
+        ref={page03RunwayRef}
+        id="page-03-section"
+        className="relative z-20 w-full min-h-screen bg-[#16100E] border-t border-white/10 shadow-[0_-25px_50px_rgba(0,0,0,0.8)]"
+      >
+        <Page03CardDeck
+          onOpenChapter={(chapter) => setActiveReadingChapter(chapter)}
+        />
+      </section>
+
+      {/* ========================================================
+          CONTINUOUS CHAPTER-READING EXPERIENCE (When active)
+          ======================================================== */}
+      {activeReadingChapter && (
+        <ChapterReader
+          currentChapter={activeReadingChapter}
+          onSelectChapter={(chapter) => setActiveReadingChapter(chapter)}
+          onReturnToDeck={() => setActiveReadingChapter(null)}
+          onOpenContact={() => {
+            setActiveReadingChapter(null);
+            setIsContactOpen(true);
+          }}
+        />
+      )}
+
+      {/* ========================================================
+          ACCESSIBLE CONTACT MODAL DIALOG
+          ======================================================== */}
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+      />
     </div>
   );
 };

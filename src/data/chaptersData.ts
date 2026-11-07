@@ -6,16 +6,23 @@ export interface ChapterItem {
   headline: string;
   summary: string;
   category: string;
-  side: 'left' | 'right';
-  nodeIndex: number; // 0 to 4 on left, 0 to 4 on right
-  // Authentic narrative paragraphs from docs/STORY_CONTENT.md
+  cardColor: string;
+  textColor: string;
+  subtextColor: string;
+  accentColor: string;
+  isDarkText: boolean;
   fullStory: string[];
   ctaLabel: string;
-  ctaAction: 'start' | 'modal' | 'work' | 'contact';
+  ctaAction: 'start' | 'read' | 'work' | 'contact';
 }
 
+// Unified approved warm ivory / dark sandstone card styling across all ten chapters
+const UNIFIED_CARD_SURFACE = '#FAF6F0'; // Warm ivory / cream
+const UNIFIED_DARK_TEXT = '#2A1B16'; // Dark sandstone / charcoal
+const UNIFIED_SUBTEXT = 'rgba(42, 27, 22, 0.72)';
+const UNIFIED_CORAL_ACCENT = '#E06D53'; // Restrained warm coral accent
+
 export const CHAPTERS_DATA: ChapterItem[] = [
-  // --- LEFT SIDE: CHAPTERS 01 TO 05 ---
   {
     id: 'chapter-01',
     number: '01',
@@ -24,8 +31,11 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: 'I follow questions until they become something I can build.',
     summary: 'Curiosity across software development, AI, automation and Linux systems.',
     category: 'Software Engineering · AI · Exploration',
-    side: 'left',
-    nodeIndex: 0, // Terminal Node L1
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
     ctaLabel: 'Return to Start ↗',
     ctaAction: 'start',
     fullStory: [
@@ -34,6 +44,7 @@ export const CHAPTERS_DATA: ChapterItem[] = [
       "That curiosity has taken me through software development, artificial intelligence, automation, Linux environments, and a growing interest in the systems that power modern technology.",
       "I enjoy learning by exploring, experimenting, making mistakes, and eventually turning an idea into something tangible.",
       "I don't see myself as someone following one fixed path. I'm interested in discovering where technology, engineering and creativity meet.",
+      "And this is a little of how that journey looks.",
     ],
   },
   {
@@ -44,17 +55,22 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: "There's always more happening beneath the surface.",
     summary: 'Investigating what makes applications, services, and operating systems run.',
     category: 'Systems · Architecture · Deep Logic',
-    side: 'left',
-    nodeIndex: 1, // Terminal Node L2
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
       'A tool can be useful. A system can be powerful. An interface can be beautiful.',
       'But what interests me is understanding what makes them possible.',
       'I find myself looking beyond what something does and becoming curious about how it actually works.',
       'What happens behind an application? How do different services communicate? What makes an AI model useful? What happens when you start exploring an operating system beyond its default boundaries?',
-      'Whether I\'m exploring a Linux environment, inspecting an application, experimenting with an AI model, or building a web experience, I enjoy going a little deeper than what\'s immediately visible.',
+      'These questions have shaped the way I interact with technology.',
+      "Whether I'm exploring a Linux environment, inspecting an application, experimenting with an AI model, or building a web experience, I enjoy going a little deeper than what's immediately visible.",
       'For me, understanding the underlying system is just as interesting as using the final product.',
+      'And the more I explore, the more there is to learn.',
     ],
   },
   {
@@ -65,17 +81,23 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: "I learn best when there's something I want to figure out.",
     summary: 'Strengthening fundamentals, debugging independently, and applying concepts.',
     category: 'Fundamentals · Growth · Independence',
-    side: 'left',
-    nodeIndex: 2, // Terminal Node L3
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
       "My journey into Software Engineering hasn't been a perfectly structured sequence of technologies.",
       "It's been a combination of fundamentals, curiosity-driven experiments, practical projects, and plenty of debugging.",
       "I've worked through programming concepts, data structures, application development, backend systems, and different parts of the technology ecosystem.",
+      'Sometimes I begin with a clear objective. Other times, I discover something interesting and spend hours understanding how it works.',
       'I believe learning becomes more meaningful when you move beyond copying solutions and begin making decisions independently.',
       'That means understanding why something works, recognizing why it breaks, researching alternatives, and having the patience to try again.',
-      "I'm still strengthening my fundamentals and expanding my engineering capabilities. Because learning something is only the beginning. Applying it is where the real understanding develops.",
+      "I'm still strengthening my fundamentals and expanding my engineering capabilities.",
+      "I don't consider that a limitation to hide. It's an important part of where I am in my journey.",
+      'Because learning something is only the beginning. Applying it is where the real understanding develops.',
     ],
   },
   {
@@ -86,17 +108,21 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: 'Different technologies. One curiosity: what can we make possible?',
     summary: 'Intelligent systems, autonomous workflows, Linux environments, and creative tech.',
     category: 'AI Models · Automation · Systems',
-    side: 'left',
-    nodeIndex: 3, // Terminal Node L4
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
       'My interests have never been limited to a single programming language or development framework.',
-      'Intelligent Systems: AI, language models, retrieval systems, and agent-based applications that move beyond simple chat into real-world systems.',
-      'Automation & Autonomous Workflows: Connecting tools, simplifying repetitive work, and building systems that perform actions.',
-      'Systems & The Technology Beneath Them: Linux, operating systems, hardware, and developer environments beyond default configurations.',
-      'Software Engineering: APIs, backend architecture, interfaces, and turning ideas into reliable systems.',
-      'Creative Technology: Visual storytelling, animation, experimental interfaces, and combining engineering with design.',
+      'I find myself exploring different areas of technology, sometimes because they solve a problem and sometimes simply because I want to understand their possibilities.',
+      'Intelligent Systems: Artificial intelligence, language models, retrieval systems, computer vision, and agent-based applications. Exploring how AI can move beyond simple conversations and become part of useful, real-world systems.',
+      'Automation & Autonomous Workflows: Connecting tools, simplifying repetitive work, and experimenting with systems that can understand tasks and perform actions.',
+      'Systems & The Technology Beneath Them: Linux, operating systems, hardware, developer environments, and the underlying components that make applications run.',
+      'Software Engineering: Building applications, working with APIs, understanding backend architecture, developing interfaces, and connecting independent components into reliable systems.',
+      'Creative Technology: Interactive websites, visual storytelling, animation, experimental interfaces, and experiences that combine engineering with design.',
     ],
   },
   {
@@ -107,22 +133,24 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: 'I like the space between an interesting idea and a working solution.',
     summary: 'Approaching problems with Python, TypeScript, React, Docker, and system design.',
     category: 'Engineering · Architecture · Execution',
-    side: 'left',
-    nodeIndex: 4, // Terminal Node L5
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
       'My approach to building starts with understanding the problem.',
-      'I explore what already exists, investigate underlying requirements, experiment with different approaches, and gradually turn the pieces into something functional.',
+      'I explore what already exists, investigate the underlying requirements, experiment with different approaches, and gradually turn the pieces into something functional.',
       'Programming & Problem Solving: Python, JavaScript, TypeScript, C and Java.',
       'Web & Application Development: React, Next.js, Node.js, FastAPI and Tailwind CSS.',
       'Artificial Intelligence: LLM applications, RAG, AI agents, Gemini and local model experimentation with Ollama.',
+      'Automation & Creative Workflows: n8n, ComfyUI and workflow automation.',
       'Systems & Infrastructure: Linux, Docker, PostgreSQL, Supabase, MongoDB and Git.',
-      "It's about knowing how to approach a problem and learning the right tools to solve it.",
+      'I do not believe engineering is about collecting as many tools as possible. It is about knowing how to approach a problem and learning the right tools to solve it.',
     ],
   },
-
-  // --- RIGHT SIDE: CHAPTERS 06 TO 10 ---
   {
     id: 'chapter-06',
     number: '06',
@@ -131,8 +159,11 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: 'Ideas are interesting. Building them makes them real.',
     summary: 'Curated pinned repositories loaded dynamically from verified GitHub work.',
     category: 'Selected Work · Public Code · Projects',
-    side: 'right',
-    nodeIndex: 0, // Terminal Node R1
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
     ctaLabel: 'Explore Repositories →',
     ctaAction: 'work',
     fullStory: [
@@ -142,6 +173,7 @@ export const CHAPTERS_DATA: ChapterItem[] = [
       "They're a window into the problems I've explored, the systems I've experimented with, and the direction my engineering interests are taking.",
       'Some demonstrate practical applications. Others represent technical exploration.',
       'Together, they reflect an evolving journey of learning through building.',
+      'Displaying verified public repositories pinned by AdityaDugar11 dynamically via GitHub GraphQL.',
     ],
   },
   {
@@ -152,16 +184,21 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: 'Building software changes when it becomes a shared responsibility.',
     summary: 'Internship at GrooveIt contributing to active products, auth, and team architecture.',
     category: 'Collaboration · Codebases · Professional',
-    side: 'right',
-    nodeIndex: 1, // Terminal Node R2
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
-      'Personal projects give you the freedom to explore. Working with an existing team and codebase introduces a different perspective.',
+      'Personal projects give you the freedom to explore.',
+      'Working with an existing team and codebase introduces a different perspective.',
       "During my internship experience with GrooveIt, I've had the opportunity to work within a collaborative development environment and contribute to an active software product.",
       "I've explored practical aspects of backend and application development, authentication, debugging, security-related changes, and working with existing project architecture.",
+      'It has helped me understand that software engineering involves much more than writing new features.',
       'You need to understand the decisions already made, communicate with other contributors, investigate unexpected behaviour, and consider how a change affects the wider system.',
-      "Because engineering is not just about what you can build independently. It's also about what you can contribute together.",
+      'Because engineering is not just about what you can build independently. It is also about what you can contribute together.',
     ],
   },
   {
@@ -172,16 +209,21 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: "Some of my favourite questions don't have a clear answer yet.",
     summary: 'Local AI models, autonomous agents, Linux configurations, and hands-on probes.',
     category: 'R&D · Local LLMs · Agentic Workflows',
-    side: 'right',
-    nodeIndex: 2, // Terminal Node R3
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
       'Not every interesting idea needs to become a finished product immediately. Some deserve experimentation.',
       "I've been exploring the possibilities of local AI models, personal AI assistants, autonomous agents, intelligent automation, and different ways of connecting software with the systems around it.",
       "I've also spent time experimenting with Linux, development environments, hardware capabilities, and understanding how existing technologies can be configured or extended.",
-      'There\'s a particular satisfaction in making an unfamiliar system do something you initially thought was outside your understanding.',
-      'Not everything here is finished. That\'s what makes it an experiment.',
+      "There's a particular satisfaction in making an unfamiliar system do something you initially thought was outside your understanding.",
+      'Some experiments become working projects. Some reveal technical limitations. Some lead to completely different questions.',
+      'I see this space as an evolving laboratory of ideas — a place to explore, investigate, and learn without needing every experiment to have a predetermined outcome.',
+      "Not everything here is finished. That's what makes it an experiment.",
     ],
   },
   {
@@ -192,15 +234,20 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: "There's a lot more I want to understand.",
     summary: 'Evolving as an engineer who unites technical systems with thoughtful design.',
     category: 'Vision · Architectural Depth · Craft',
-    side: 'right',
-    nodeIndex: 3, // Terminal Node R4
-    ctaLabel: 'Read Chapter ↗',
-    ctaAction: 'modal',
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
+    ctaLabel: 'Continue Reading →',
+    ctaAction: 'read',
     fullStory: [
       "I'm still discovering the areas of engineering I want to explore more deeply.",
       'Artificial intelligence and intelligent systems are among my strongest interests, but I also want to strengthen my understanding of software architecture, computer systems, backend engineering, and the foundations that make complex applications reliable.',
       'I want to become someone who can move comfortably between understanding a technical problem, investigating possible solutions, and building something meaningful from them.',
       'I also want to keep exploring the creative side of technology — making digital experiences that are not only functional but thoughtfully designed and enjoyable to interact with.',
+      "I don't have a finished definition of the engineer I want to become.",
+      "I'm building that understanding through the things I learn, the problems I encounter, and the work I choose to pursue.",
       'The journey is still taking shape.',
     ],
   },
@@ -212,16 +259,20 @@ export const CHAPTERS_DATA: ChapterItem[] = [
     headline: 'Good work often begins with a conversation.',
     summary: 'Open to technical discussions, collaborations, and engineering opportunities.',
     category: 'Dialogue · Collaboration · Contact',
-    side: 'right',
-    nodeIndex: 4, // Terminal Node R5
+    cardColor: UNIFIED_CARD_SURFACE,
+    textColor: UNIFIED_DARK_TEXT,
+    subtextColor: UNIFIED_SUBTEXT,
+    accentColor: UNIFIED_CORAL_ACCENT,
+    isDarkText: true,
     ctaLabel: 'Get in Touch ↗',
     ctaAction: 'contact',
     fullStory: [
       "You've seen a little of what interests me, what I've been exploring, and how I approach building things.",
-      'But a portfolio can only show a part of someone\'s journey.',
-      'I\'m interested in meeting people who enjoy thinking differently, exploring challenging ideas, sharing knowledge, and working together to build useful things.',
+      "But a portfolio can only show a part of someone's journey.",
+      "I'm interested in meeting people who enjoy thinking differently, exploring challenging ideas, sharing knowledge, and working together to build useful things.",
       "Whether it's a technical discussion, an interesting collaboration, or an opportunity to work on something meaningful, I'd be glad to connect.",
-      'Let\'s see what we can create together.',
+      "Let's see what we can create together.",
+      'Aditya Dugar · Software Engineering Student · Jain University',
     ],
   },
 ];
