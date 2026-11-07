@@ -6,7 +6,8 @@ import { BackgroundVideo } from './components/BackgroundVideo';
 import { Navigation } from './components/Navigation';
 import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
-import { Page02SequenceCanvas } from './components/Page02SequenceCanvas';
+import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
+import { Page02TheLivingSignal } from './components/Page02TheLivingSignal';
 import { Page03CardDeck } from './components/Page03CardDeck';
 import { ChapterReader } from './components/ChapterReader';
 import { ChapterItem, CHAPTERS_DATA } from './data/chaptersData';
@@ -25,6 +26,7 @@ export const App: React.FC = () => {
   const page01RunwayRef = useRef<HTMLDivElement>(null);
   const transitionRunwayRef = useRef<HTMLDivElement>(null);
   const page02RunwayRef = useRef<HTMLDivElement>(null);
+  const collectionRunwayRef = useRef<HTMLDivElement>(null);
   const page03RunwayRef = useRef<HTMLDivElement>(null);
 
   // Visual Scene Layer Refs
@@ -34,8 +36,10 @@ export const App: React.FC = () => {
   const page02SceneRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
-  // Scroll Progress Tracking for Page 02 Sequence Canvas (0.0 to 1.0)
-  const [page02Progress, setPage02Progress] = useState(0);
+  // Scroll Progress Tracking
+  const [transitionProgress, setTransitionProgress] = useState(0); // 0.0 to 1.0 (Page 1 -> Page 2 shader transition)
+  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Page 2 orbital formation)
+  const [collectionProgress, setCollectionProgress] = useState(0); // 0.0 to 1.0 (Page 2 -> Page 3 card assembly)
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -87,6 +91,7 @@ export const App: React.FC = () => {
       !page01RunwayRef.current ||
       !transitionRunwayRef.current ||
       !page02RunwayRef.current ||
+      !collectionRunwayRef.current ||
       !page03RunwayRef.current
     )
       return;
@@ -96,8 +101,8 @@ export const App: React.FC = () => {
       const mainNav = document.getElementById('main-navigation');
       const scrollIndicator = document.getElementById('scroll-indicator');
 
-      // Set initial transform states cleanly via GSAP (avoids inline style conflicts)
-      gsap.set(page02SceneRef.current, { yPercent: 100, opacity: 0 });
+      // Set initial Page 2 visibility state
+      gsap.set(page02SceneRef.current, { opacity: 0, pointerEvents: 'none' });
 
       // ========================================================
       // TIMELINE 1: PAGE 01 SCROLL (Approved Exit Choreography)
@@ -165,43 +170,44 @@ export const App: React.FC = () => {
       }
 
       // ========================================================
-      // TIMELINE 2: CINEMATIC PAGE 01 -> PAGE 02 TRANSITION ZONE
-      // (Page 01 moves up and away; Page 02 rises from below and fills screen)
+      // TIMELINE 2: CINEMATIC PAGE 01 -> PAGE 02 SHADER TRANSITION
+      // Real WebGL noise displacement & chromatic tear transformation
       // ========================================================
       const transitionTimeline = gsap.timeline({
         scrollTrigger: {
           trigger: transitionRunwayRef.current,
           start: 'top top',
           end: 'bottom top',
-          scrub: 0.6,
+          scrub: 0.5,
+          onUpdate: (self) => {
+            setTransitionProgress(self.progress);
+          },
         },
       });
 
-      transitionTimeline.to({}, { duration: 1.0 }, 0);
-
-      // Page 01 moves up and scales slightly back as it exits
+      // Page 01 fades out cleanly across transition zone
       if (page01SceneRef.current) {
         transitionTimeline.fromTo(
           page01SceneRef.current,
-          { yPercent: 0, scale: 1.0, opacity: 1.0 },
-          { yPercent: -40, scale: 0.95, opacity: 0.0, ease: 'power1.inOut', duration: 0.9 },
+          { opacity: 1 },
+          { opacity: 0, ease: 'none', duration: 0.8 },
           0
         );
       }
 
-      // Page 02 scene rises smoothly from below the viewport (100% -> 0%) and fills screen
+      // Page 02 scene smoothly fades in as transition completes
       if (page02SceneRef.current) {
         transitionTimeline.fromTo(
           page02SceneRef.current,
-          { yPercent: 100, opacity: 0.2 },
-          { yPercent: 0, opacity: 1.0, ease: 'power2.out', duration: 1.0 },
-          0
+          { opacity: 0, pointerEvents: 'none' },
+          { opacity: 1, pointerEvents: 'auto', ease: 'none', duration: 1.0 },
+          0.1
         );
       }
 
       // ========================================================
-      // TIMELINE 3: PAGE 02 SEQUENCE SCRUBBING (240 Frames)
-      // (Character centered, 3 luminous rings & 10 branches form progressively)
+      // TIMELINE 3: PAGE 02 ORBITAL PROGRESSION
+      // Character centered, 3 luminous rings ignite, 10 connectors draw, 10 cards reveal
       // ========================================================
       const page02Timeline = gsap.timeline({
         scrollTrigger: {
@@ -217,18 +223,35 @@ export const App: React.FC = () => {
 
       page02Timeline.to({}, { duration: 1.0 }, 0);
 
-      // At the end of Page 02, as user scrolls towards Page 03:
-      // Page 02 gently slides up to reveal Page 03 deck
+      // ========================================================
+      // TIMELINE 4: PAGE 02 -> PAGE 03 CARD COLLECTION
+      // 10 cards detach from orbital scene and assemble into single overlapping stack
+      // ========================================================
+      const collectionTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: collectionRunwayRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.5,
+          onUpdate: (self) => {
+            setCollectionProgress(self.progress);
+          },
+        },
+      });
+
+      collectionTimeline.to({}, { duration: 1.0 }, 0);
+
+      // When reaching Page 03, gently fade Page 2 layer so Page 03 interactive deck takes focus
       if (page02SceneRef.current) {
         gsap.to(page02SceneRef.current, {
           scrollTrigger: {
             trigger: page03RunwayRef.current,
             start: 'top bottom',
             end: 'top top',
-            scrub: 0.6,
+            scrub: 0.5,
           },
-          yPercent: -100,
-          opacity: 0.2,
+          opacity: 0,
+          pointerEvents: 'none',
           ease: 'power1.inOut',
         });
       }
@@ -255,32 +278,44 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#140F0E] text-[#FAF7F2] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#181210] text-[#FAF7F2] overflow-x-hidden">
       {/* ========================================================
           PAGE 01 VISUAL LAYER (Background Video & Atmosphere)
+          Native video playback remains active and steady
           ======================================================== */}
       <div
         ref={page01SceneRef}
         id="page-01-scene"
         className="fixed inset-0 z-0 will-change-transform"
       >
-        <BackgroundVideo
-          ref={videoWrapperRef}
-          videoRef={videoElementRef}
-        />
+        <BackgroundVideo ref={videoWrapperRef} videoRef={videoElementRef} />
       </div>
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER (240-Frame Sequence Canvas)
-          Exclusively the Character, Pastel Sky, 3 Rings, 10 Nodes
-          Zero cards, zero modals, zero debug overlays
+          PAGE 01 -> PAGE 02 REAL WEBGL SCENE TRANSITION
+          Noise displacement, chromatic tear, and luminous coral glow
+          ======================================================== */}
+      <SceneTransitionCanvas
+        progress={transitionProgress}
+        videoRef={videoElementRef}
+        className="z-10"
+      />
+
+      {/* ========================================================
+          PAGE 02 VISUAL LAYER: THE LIVING SIGNAL
+          Aditya's authentic portrait (aditya.png), 3 orbital rings,
+          10 outward curved connectors, 10 chapter cards.
           ======================================================== */}
       <div
         ref={page02SceneRef}
         id="page-02-scene"
-        className="fixed inset-0 z-10 will-change-transform"
+        className="fixed inset-0 z-20 will-change-transform"
       >
-        <Page02SequenceCanvas progress={page02Progress} />
+        <Page02TheLivingSignal
+          progress={page02Progress}
+          collectionProgress={collectionProgress}
+          onOpenChapter={(chapter) => setActiveReadingChapter(chapter)}
+        />
       </div>
 
       {/* ========================================================
@@ -309,33 +344,43 @@ export const App: React.FC = () => {
       <div
         ref={page01RunwayRef}
         id="page-01-runway"
-        className="relative w-full h-[200vh] pointer-events-none"
+        className="relative w-full h-[180vh] pointer-events-none"
         aria-hidden="true"
       />
 
-      {/* Runway 2: Transition Zone (Page 01 moves away, Page 02 rises to fill viewport) */}
+      {/* Runway 2: WebGL Scene Transformation Zone (Page 01 dissolves into Page 02) */}
       <div
         ref={transitionRunwayRef}
         id="page-01-to-02-transition-runway"
-        className="relative w-full h-[150vh] pointer-events-none"
+        className="relative w-full h-[160vh] pointer-events-none"
         aria-hidden="true"
       />
 
-      {/* Runway 3: Page 02 Orbital Progression (240 Frames scrubbed) */}
+      {/* Runway 3: Page 02 Orbital Constellation Formation (Rings & 10 Connections) */}
       <div
         ref={page02RunwayRef}
         id="page-02-runway"
-        className="relative w-full h-[320vh] pointer-events-none"
+        className="relative w-full h-[280vh] pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Runway 4: Page 02 -> Page 03 Card Collection Zone (Cards fly and assemble into deck) */}
+      <div
+        ref={collectionRunwayRef}
+        id="page-02-to-03-collection-runway"
+        className="relative w-full h-[180vh] pointer-events-none"
         aria-hidden="true"
       />
 
       {/* ========================================================
-          PAGE 03: THE CHAPTER CARD DECK & STORY JOURNEY
+          PAGE 03: THE LAYERED CHAPTER CARD DECK
+          Single overlapping stack (Reference Image 2)
+          Unified warm ivory cards, dark sandstone text, coral accents
           ======================================================== */}
       <section
         ref={page03RunwayRef}
         id="page-03-section"
-        className="relative z-20 w-full min-h-screen bg-[#16100E] border-t border-white/10 shadow-[0_-25px_50px_rgba(0,0,0,0.8)]"
+        className="relative z-30 w-full min-h-screen bg-[#181210] border-t border-white/10 shadow-[0_-25px_50px_rgba(0,0,0,0.85)]"
       >
         <Page03CardDeck
           onOpenChapter={(chapter) => setActiveReadingChapter(chapter)}
@@ -344,6 +389,7 @@ export const App: React.FC = () => {
 
       {/* ========================================================
           CONTINUOUS CHAPTER-READING EXPERIENCE (When active)
+          Vertical scroll driving horizontal card transition
           ======================================================== */}
       {activeReadingChapter && (
         <ChapterReader

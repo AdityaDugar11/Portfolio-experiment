@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { CHAPTERS_DATA, ChapterItem } from '../data/chaptersData';
 
@@ -32,9 +32,6 @@ export const Page02TheLivingSignal: React.FC<Page02TheLivingSignalProps> = ({
   const characterOpacity = 1 - Math.min(collectionProgress * 1.4, 0.9);
 
   // Orbital layout configuration for Desktop (5 cards on left, 5 cards on right)
-  const leftCards = useMemo(() => chapters.slice(0, 5), [chapters]);
-  const rightCards = useMemo(() => chapters.slice(5, 10), [chapters]);
-
   // Card reveal stagger on Page 2
   const getCardRevealProgress = (index: number) => {
     // Reveal order: pairs from top to bottom (01&06, 02&07, 03&08, 04&09, 05&10)
@@ -386,8 +383,8 @@ export const Page02TheLivingSignal: React.FC<Page02TheLivingSignalProps> = ({
           const currentScale = orbitalScale + (deckScale - orbitalScale) * collectionProgress;
           const cardZIndex = collectionProgress > 0.5 ? 40 - index : 30;
 
-          // Card opacity: reveals on Page 2, stays visible as it collects into Page 3
-          const cardOpacity = revealVal;
+          // Card opacity: reveals on Page 2, stays fully visible as it collects into Page 3
+          const cardOpacity = Math.max(revealVal, collectionProgress > 0 ? 1 : 0);
 
           return (
             <div
