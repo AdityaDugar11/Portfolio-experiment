@@ -246,7 +246,7 @@ export const App: React.FC = () => {
         gsap.to(page02SceneRef.current, {
           scrollTrigger: {
             trigger: page03RunwayRef.current,
-            start: 'top bottom',
+            start: 'top 30%',
             end: 'top top',
             scrub: 0.5,
           },
