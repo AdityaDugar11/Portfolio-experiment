@@ -187,11 +187,14 @@ export const App: React.FC = () => {
       }
 
       // ========================================================
-      // TIMELINE 3: PAGE 02 240-FRAME LIVING SIGNAL SEQUENCE (DESKTOP >= 768px)
-      // Actual 240 WebP video frames scrubbed deterministically + 10 chapter cards
-      // end: 'bottom bottom' ensures progress reaches exactly 1.0 at document scroll bottom
+      // TIMELINE 3 & 4: RESPONSIVE GSAP MATCHMEDIA
+      // Handles Desktop (>= 768px) and Mobile (< 768px) cleanly
       // ========================================================
-      if (window.innerWidth >= 768 && page02RunwayRef.current) {
+      const mm = gsap.matchMedia();
+
+      // DESKTOP & TABLET (>= 768px): Original 240-frame sequence + 10 constellation cards
+      mm.add('(min-width: 768px)', () => {
+        if (!page02RunwayRef.current) return;
         const page02Timeline = gsap.timeline({
           scrollTrigger: {
             trigger: page02RunwayRef.current,
@@ -209,13 +212,11 @@ export const App: React.FC = () => {
         });
 
         page02Timeline.to({}, { duration: 1.0 }, 0);
-      }
+      });
 
-      // ========================================================
-      // TIMELINE 4: PAGE 02 HORIZONTAL CINEMATIC CONSTELLATION (MOBILE < 768px)
-      // Pinned cinematic stage explored horizontally via vertical page scroll
-      // ========================================================
-      if (window.innerWidth < 768 && mobilePage02RunwayRef.current) {
+      // MOBILE (< 768px): Single continuous horizontal cinematic constellation
+      mm.add('(max-width: 767px)', () => {
+        if (!mobilePage02RunwayRef.current) return;
         const mobilePage02Timeline = gsap.timeline({
           scrollTrigger: {
             trigger: mobilePage02RunwayRef.current,
@@ -233,7 +234,7 @@ export const App: React.FC = () => {
         });
 
         mobilePage02Timeline.to({}, { duration: 1.0 }, 0);
-      }
+      });
     });
 
     return () => {

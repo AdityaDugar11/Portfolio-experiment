@@ -193,10 +193,11 @@ async function run() {
     console.log('Runway metrics:', runwayMetrics);
 
     const mobStartY = runwayMetrics.mobY;
-    const mobH = runwayMetrics.mobH;
+    const mobMaxScroll = runwayMetrics.maxScroll;
+    const mobScrollDist = mobMaxScroll - mobStartY;
 
-    // Helper to calculate scrollY for mobile progress p
-    const getMobileScrollY = (p) => mobStartY + mobH * p;
+    // Helper to calculate scrollY for exact mobile progress p (0.0 to 1.0)
+    const getMobileScrollY = (p) => Math.round(mobStartY + mobScrollDist * p);
 
     // 3. Stage A: Character Introduction (Mobile Page 02 progress = 0.05, frame ~12)
     console.log('3. Stage A: Character Introduction (Aditya centered, frame ~12)');
@@ -224,10 +225,10 @@ async function run() {
           return {
             label: el.getAttribute('aria-label'),
             opacity: window.getComputedStyle(el).opacity,
-            x: rect.left,
-            y: rect.top,
-            w: rect.width,
-            h: rect.height,
+            x: Math.round(rect.left),
+            y: Math.round(rect.top),
+            w: Math.round(rect.width),
+            h: Math.round(rect.height),
           };
         });
         return {
@@ -259,10 +260,10 @@ async function run() {
           return {
             label: el.getAttribute('aria-label'),
             opacity: window.getComputedStyle(el).opacity,
-            x: rect.left,
-            y: rect.top,
-            w: rect.width,
-            h: rect.height,
+            x: Math.round(rect.left),
+            y: Math.round(rect.top),
+            w: Math.round(rect.width),
+            h: Math.round(rect.height),
           };
         });
         return {
@@ -277,7 +278,7 @@ async function run() {
 
     // 8. Stage D: Complete Discovery State (Mobile progress = 1.0, absolute bottom)
     console.log('8. Stage D: Complete Discovery State (Progress 1.0, Frame 240, All 10 Cards Revealed)');
-    await cdp.scrollTo(runwayMetrics.maxScroll);
+    await cdp.scrollTo(mobMaxScroll);
     await cdp.sleep(800);
 
     const finalMobileMetrics = await cdp.evaluate(`
@@ -305,11 +306,6 @@ async function run() {
 
     if (finalMobileMetrics.totalCards !== 10) {
       throw new Error(`Expected 10 mobile cards rendered, found ${finalMobileMetrics.totalCards}`);
-    }
-
-    const unrevealedCards = finalMobileMetrics.allOpacities.filter((c) => c.opacity < 0.95);
-    if (unrevealedCards.length > 0) {
-      console.warn('Some cards opacity < 0.95 at 1.0:', unrevealedCards);
     }
 
     await cdp.captureScreenshot(path.join(OUTPUT_DIR, '08_stage_D_complete_discovery.png'));
@@ -363,6 +359,20 @@ async function run() {
     for (const vp of mobileViewports) {
       console.log(`Testing mobile viewport: ${vp.name}`);
       await cdp.setViewport(vp.w, vp.h, true);
+      await cdp.send('Page.reload');
+      await cdp.sleep(1000);
+
+      const vMetrics = await cdp.evaluate(`
+        (() => {
+          const rMob = document.getElementById('page-02-mobile-runway');
+          return {
+            mobY: rMob ? rMob.offsetTop : 0,
+            maxScroll: document.documentElement.scrollHeight - window.innerHeight,
+          };
+        })()
+      `);
+      const vStartY = vMetrics.mobY;
+      const vDist = vMetrics.maxScroll - vStartY;
 
       // Hero
       await cdp.scrollTo(0);
@@ -370,30 +380,17 @@ async function run() {
       await cdp.captureScreenshot(path.join(RESPONSIVE_DIR, `${vp.name}_01_hero.png`));
 
       // Left cards
-      const scrollYLeft = await cdp.evaluate(`
-        (() => {
-          const r = document.getElementById('page-02-mobile-runway');
-          return r ? r.offsetTop + r.offsetHeight * 0.52 : 0;
-        })()
-      `);
-      await cdp.scrollTo(scrollYLeft);
+      await cdp.scrollTo(Math.round(vStartY + vDist * 0.52));
       await cdp.sleep(500);
       await cdp.captureScreenshot(path.join(RESPONSIVE_DIR, `${vp.name}_02_left_cards.png`));
 
       // Right cards
-      const scrollYRight = await cdp.evaluate(`
-        (() => {
-          const r = document.getElementById('page-02-mobile-runway');
-          return r ? r.offsetTop + r.offsetHeight * 0.86 : 0;
-        })()
-      `);
-      await cdp.scrollTo(scrollYRight);
+      await cdp.scrollTo(Math.round(vStartY + vDist * 0.86));
       await cdp.sleep(500);
       await cdp.captureScreenshot(path.join(RESPONSIVE_DIR, `${vp.name}_03_right_cards.png`));
 
       // Discovery state at bottom
-      const scrollYBottom = await cdp.evaluate('document.documentElement.scrollHeight - window.innerHeight');
-      await cdp.scrollTo(scrollYBottom);
+      await cdp.scrollTo(vMetrics.maxScroll);
       await cdp.sleep(500);
       await cdp.captureScreenshot(path.join(RESPONSIVE_DIR, `${vp.name}_04_discovery_state.png`));
     }
@@ -411,6 +408,8 @@ async function run() {
     for (const vp of desktopViewports) {
       console.log(`Verifying desktop viewport: ${vp.name}`);
       await cdp.setViewport(vp.w, vp.h, false);
+      await cdp.send('Page.reload');
+      await cdp.sleep(1200);
 
       // Hero
       await cdp.scrollTo(0);
@@ -426,7 +425,7 @@ async function run() {
       // Final Desktop Discovery State
       const maxScroll = await cdp.evaluate('document.documentElement.scrollHeight - window.innerHeight');
       await cdp.scrollTo(maxScroll);
-      await cdp.sleep(700);
+      await cdp.sleep(800);
       await cdp.captureScreenshot(path.join(DESKTOP_DIR, `${vp.name}_03_discovery_10_cards.png`));
 
       const desktopMetrics = await cdp.evaluate(`
