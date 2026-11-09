@@ -8,7 +8,7 @@ import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
 import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
 import { Page02Scene } from './components/Page02Scene';
-import { Page02MobileConstellation } from './components/Page02MobileConstellation';
+import { Page02MobileVertical } from './components/Page02MobileVertical';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   // Scroll Progress Tracking
   const [transitionProgress, setTransitionProgress] = useState(0); // 0.0 to 1.0 (Page 1 -> Page 2 shader transition)
   const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Desktop Page 2 240-frame sequence & card reveal)
-  const [mobilePage02Progress, setMobilePage02Progress] = useState(0); // 0.0 to 1.0 (Mobile Page 2 horizontal constellation)
+  const [mobilePage02Progress, setMobilePage02Progress] = useState(0); // 0.0 to 1.0 (Mobile Page 2 vertical cinematic scrollytelling)
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -214,7 +214,7 @@ export const App: React.FC = () => {
         page02Timeline.to({}, { duration: 1.0 }, 0);
       });
 
-      // MOBILE (< 768px): Single continuous horizontal cinematic constellation
+      // MOBILE (< 768px): Single continuous vertical cinematic scrollytelling
       mm.add('(max-width: 767px)', () => {
         if (!mobilePage02RunwayRef.current) return;
         const mobilePage02Timeline = gsap.timeline({
@@ -254,11 +254,11 @@ export const App: React.FC = () => {
 
   const handleExploreWork = () => {
     if (window.innerWidth < 768 && mobilePage02RunwayRef.current) {
-      // Scroll to right wing on mobile where Chapter 06 is explored (~0.78 progress)
+      // Scroll to Chapter 06 (The Work I Choose to Show) on mobile vertical constellation (~0.65 progress)
       if (lenisRef.current) {
         const targetY =
           mobilePage02RunwayRef.current.offsetTop +
-          mobilePage02RunwayRef.current.offsetHeight * 0.78;
+          mobilePage02RunwayRef.current.offsetHeight * 0.65;
         lenisRef.current.scrollTo(targetY, { duration: 2.0 });
       } else {
         mobilePage02RunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
