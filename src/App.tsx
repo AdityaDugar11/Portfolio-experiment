@@ -317,10 +317,10 @@ export const App: React.FC = () => {
       </div>
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER: HORIZONTAL CONSTELLATION (MOBILE < 768px)
-          Single continuous cinematic character-and-orbital scene.
-          Vertical finger scrolling explores the wider constellation horizontally.
-          Strictly NO vertical card lists, NO separate sections, NO Page 3.
+          PAGE 02 VISUAL LAYER: VERTICAL CINEMATIC SCROLLYTELLING (MOBILE < 768px)
+          Single continuous cinematic character-and-orbital world.
+          Vertical finger scrolling navigates downward through the tall virtual scene.
+          Strictly NO horizontal panning, NO plain list, NO Page 3.
           ======================================================== */}
       <div
         id="page-02-mobile-scene"
@@ -330,7 +330,7 @@ export const App: React.FC = () => {
           pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
         }}
       >
-        <Page02MobileConstellation
+        <Page02MobileVertical
           progress={mobilePage02Progress}
           onExploreWork={handleExploreWork}
           onStartJourney={handleStartJourney}

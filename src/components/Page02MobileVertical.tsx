@@ -13,7 +13,6 @@ interface Page02MobileVerticalProps {
 const TOTAL_FRAMES = 240;
 const FRAME_WIDTH = 1280;
 const FRAME_HEIGHT = 720;
-const FRAME_ASPECT = FRAME_WIDTH / FRAME_HEIGHT;
 
 const getFrameUrl = (index: number): string => {
   const frameNum = Math.min(Math.max(index + 1, 1), TOTAL_FRAMES);
@@ -314,11 +313,9 @@ export const Page02MobileVertical: React.FC<Page02MobileVerticalProps> = ({
   // Tier 4: Ch 09 (Left) & Ch 10 (Right)  - reveal 0.76 -> 0.88 (Ch 10 is Closing)
   // Hold & Discovery state: 0.88 -> 1.00
 
-  // Camera vertical travel offset in virtual pixels
-  // When progress < 0.36: cards container is hidden/below viewport
-  // As progress goes from 0.36 to 0.94: camera translates down through the constellation
-  const totalWorldHeight = viewport.height * 2.3;
-  const maxCameraTravel = totalWorldHeight - viewport.height * 0.68;
+  // Vertical world height & camera translation
+  const totalWorldHeight = viewport.height * 2.4;
+  const maxCameraTravel = totalWorldHeight - viewport.height * 0.72;
 
   const cameraY = useMemo(() => {
     if (progress <= 0.36) return 0;
@@ -376,7 +373,7 @@ export const Page02MobileVertical: React.FC<Page02MobileVerticalProps> = ({
 
   // Center vertical spine start and end points
   const spineStartX = viewport.width / 2;
-  const spineStartY = Math.max(viewport.height * 0.20, 160);
+  const spineStartY = 0;
   const spineEndY = cardLayouts[cardLayouts.length - 1].y + 140;
 
   return (
@@ -436,6 +433,67 @@ export const Page02MobileVertical: React.FC<Page02MobileVerticalProps> = ({
       </div>
 
       {/* ========================================================
+          3.5 FIXED DOCKED SIGNAL EMITTER BEAM (STAGE 3 & 4)
+          Streams downward from Aditya's orbital rings into the scrollytelling world
+          ======================================================== */}
+      <div
+        className="absolute inset-x-0 top-0 h-[260px] z-15 pointer-events-none transition-opacity duration-300"
+        style={{
+          opacity: dockProgress > 0.3 ? Math.min((dockProgress - 0.3) * 2.0, 1) : 0,
+        }}
+      >
+        <svg className="w-full h-full">
+          <defs>
+            <filter id="dock-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          {/* Luminous Core Line streaming from rings down to y = 260 */}
+          <line
+            x1={viewport.width / 2}
+            y1={Math.round(viewport.height * 0.14)}
+            x2={viewport.width / 2}
+            y2={260}
+            stroke="#E06D53"
+            strokeWidth="3.5"
+            strokeOpacity="0.45"
+            filter="url(#dock-glow)"
+          />
+          <line
+            x1={viewport.width / 2}
+            y1={Math.round(viewport.height * 0.14)}
+            x2={viewport.width / 2}
+            y2={260}
+            stroke="#FAF7F2"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeOpacity="0.85"
+          />
+          {/* Heart Anchor Node */}
+          <circle
+            cx={viewport.width / 2}
+            y1={Math.round(viewport.height * 0.14)}
+            r="8"
+            fill="#E06D53"
+            fillOpacity="0.3"
+            className="animate-pulse"
+          />
+          <circle
+            cx={viewport.width / 2}
+            cy={Math.round(viewport.height * 0.14)}
+            r="4"
+            fill="#FAF7F2"
+            stroke="#E06D53"
+            strokeWidth="1.5"
+          />
+        </svg>
+      </div>
+
+      {/* ========================================================
           4. VERTICAL EXTENDED SCENE: CENTRAL LUMINOUS SPINE & CONNECTORS
           Runs through the tall virtual environment under the camera
           ======================================================== */}
@@ -446,6 +504,10 @@ export const Page02MobileVertical: React.FC<Page02MobileVerticalProps> = ({
           opacity: cardsLayerOpacity,
           transform: `translateY(${-cameraY}px)`,
           willChange: 'transform',
+          maskImage:
+            'linear-gradient(to bottom, transparent 0%, transparent 16%, black 25%, black 92%, transparent 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, transparent 0%, transparent 16%, black 25%, black 92%, transparent 100%)',
         }}
       >
         {/* SVG Canvas for Central Luminous Spine & Curved Bezier Connectors */}
@@ -742,15 +804,29 @@ export const Page02MobileVertical: React.FC<Page02MobileVerticalProps> = ({
             {/* Action Buttons */}
             <div className="mt-5 pt-3.5 border-t border-[#2A1B16]/15 flex items-center gap-3">
               {selectedChapter.id === 'chapter-06' ? (
-                <a
-                  href="https://github.com/adityadugar"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#E06D53] text-[#FAF7F2] text-xs font-semibold shadow-md active:scale-95 transition-transform"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>GitHub Repositories</span>
-                </a>
+                <div className="flex-1 flex gap-2">
+                  <a
+                    href="https://github.com/adityadugar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#E06D53] text-[#FAF7F2] text-xs font-semibold shadow-md active:scale-95 transition-transform"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>GitHub Repositories</span>
+                  </a>
+                  {onExploreWork && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedChapter(null);
+                        onExploreWork();
+                      }}
+                      className="inline-flex items-center justify-center py-2.5 px-3 rounded-xl bg-[#181210]/10 text-[#2A1B16] text-xs font-medium active:scale-95 transition-transform"
+                    >
+                      Focus
+                    </button>
+                  )}
+                </div>
               ) : selectedChapter.id === 'chapter-10' ? (
                 <button
                   type="button"
