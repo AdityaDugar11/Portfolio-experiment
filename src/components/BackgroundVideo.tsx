@@ -79,9 +79,9 @@ void main() {
   vec2 totalDisp = parallaxOffset + wakeOffset + rippleOffset + lensCurve;
   vec2 finalUv = clamp(scenicUv + totalDisp, vec2(0.001), vec2(0.999));
 
-  // Whisper-soft optical dispersion only inside active motion wake
-  float chromaShift = 0.00075 * uMotionEnergy * lensZone;
-  vec2 chromaVec = uVelocity * 0.12 + vec2(chromaShift, 0.0);
+  // Micro optical dispersion strictly localized inside active pointer lens (zero global RGB split)
+  float chromaShift = 0.00045 * uMotionEnergy * lensZone;
+  vec2 chromaVec = (uVelocity * 0.012 + vec2(chromaShift, 0.0)) * lensZone;
 
   float r = texture2D(uTexture, clamp(finalUv + chromaVec, vec2(0.001), vec2(0.999))).r;
   float g = texture2D(uTexture, finalUv).g;
@@ -125,20 +125,46 @@ export const BackgroundVideo = forwardRef<HTMLDivElement, BackgroundVideoProps>(
       }
     }, [videoRef]);
 
-    // Check pointer capability (fine pointer only) and reduced-motion preference
+    // Check pointer capability (fine pointer only, never touch-only) and reduced-motion preference
     useEffect(() => {
       const finePointerMq = window.matchMedia('(pointer: fine)');
+      const anyFinePointerMq = window.matchMedia('(any-pointer: fine)');
+      const coarsePointerMq = window.matchMedia('(pointer: coarse)');
       const reducedMotionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let observedMousePointer = false;
 
       const evaluate = () => {
-        setEnableInteractiveEnv(finePointerMq.matches && !reducedMotionMq.matches);
+        if (reducedMotionMq.matches) {
+          setEnableInteractiveEnv(false);
+          return;
+        }
+        const hasFinePointer = finePointerMq.matches || anyFinePointerMq.matches;
+        const desktopMouseActive = !coarsePointerMq.matches && observedMousePointer;
+        setEnableInteractiveEnv(hasFinePointer || desktopMouseActive);
       };
       evaluate();
 
+      const onFirstMousePointer = (e: PointerEvent) => {
+        if (e.pointerType === 'mouse' && !coarsePointerMq.matches && !reducedMotionMq.matches) {
+          observedMousePointer = true;
+          evaluate();
+          window.removeEventListener('pointermove', onFirstMousePointer);
+        }
+      };
+
+      if (!finePointerMq.matches && !anyFinePointerMq.matches && !coarsePointerMq.matches) {
+        window.addEventListener('pointermove', onFirstMousePointer, { passive: true });
+      }
+
       finePointerMq.addEventListener('change', evaluate);
+      anyFinePointerMq.addEventListener('change', evaluate);
+      coarsePointerMq.addEventListener('change', evaluate);
       reducedMotionMq.addEventListener('change', evaluate);
       return () => {
+        window.removeEventListener('pointermove', onFirstMousePointer);
         finePointerMq.removeEventListener('change', evaluate);
+        anyFinePointerMq.removeEventListener('change', evaluate);
+        coarsePointerMq.removeEventListener('change', evaluate);
         reducedMotionMq.removeEventListener('change', evaluate);
       };
     }, []);
