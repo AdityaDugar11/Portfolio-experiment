@@ -37,6 +37,11 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
     const imageCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
     const loadingSetRef = useRef<Set<number>>(new Set());
     const lastDrawnFrameRef = useRef<number>(-1);
+    const lastRenderedSizeRef = useRef<{ w: number; h: number; progress: number }>({
+      w: 0,
+      h: 0,
+      progress: -1,
+    });
     const targetFrameRef = useRef<number>(0);
     const progressRef = useRef<number>(progress);
     const renderedRectRef = useRef<RenderedRect>({
@@ -263,9 +268,11 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
       // 3. Locate best available frame in cache
       const target = targetFrameRef.current;
       const cache = imageCacheRef.current;
+      let actualDrawnIndex = -1;
       let imgToDraw: HTMLImageElement | undefined = cache.get(target);
-
-      if (!imgToDraw || !imgToDraw.complete || imgToDraw.naturalWidth === 0) {
+      if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) {
+        actualDrawnIndex = target;
+      } else {
         let closestDist = Infinity;
         let closestIndex = lastDrawnFrameRef.current;
 
@@ -281,7 +288,19 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
 
         if (closestIndex >= 0 && cache.has(closestIndex)) {
           imgToDraw = cache.get(closestIndex);
+          actualDrawnIndex = closestIndex;
         }
+      }
+
+      // Skip redundant re-blits when the exact target frame and canvas dimensions are already drawn
+      if (
+        actualDrawnIndex === lastDrawnFrameRef.current &&
+        actualDrawnIndex === target &&
+        lastRenderedSizeRef.current.w === fgTargetW &&
+        lastRenderedSizeRef.current.h === fgTargetH &&
+        (!isMobile || Math.abs(lastRenderedSizeRef.current.progress - progressRef.current) < 0.0001)
+      ) {
+        return;
       }
 
       // 4. Paint to canvases only when a valid frame is ready (NEVER flash black!)
@@ -306,7 +325,12 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
         fgCtx.drawImage(imgToDraw, drawX, drawY, drawW, drawH);
         fgCtx.restore();
 
-        lastDrawnFrameRef.current = target;
+        lastDrawnFrameRef.current = actualDrawnIndex;
+        lastRenderedSizeRef.current = {
+          w: fgTargetW,
+          h: fgTargetH,
+          progress: progressRef.current,
+        };
       }
     }, [onRenderRectChange]);
 
@@ -316,7 +340,9 @@ export const Page02SequenceCanvas = forwardRef<Page02CanvasHandle, Page02Sequenc
 
       const loop = () => {
         if (!active) return;
-        drawCurrentFrame();
+        if (!document.hidden) {
+          drawCurrentFrame();
+        }
         animFrameRef.current = requestAnimationFrame(loop);
       };
 

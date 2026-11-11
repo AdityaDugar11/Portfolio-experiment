@@ -9,10 +9,29 @@ import { ContactModal } from './components/ContactModal';
 import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
 import { Page02Scene } from './components/Page02Scene';
 import { Page02MobileVertical } from './components/Page02MobileVertical';
+import { CinematicOpening } from './components/CinematicOpening';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const INTRO_SESSION_KEY = 'the-living-signal-intro-seen';
+
+function shouldPlayIntroOnMount(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  try {
+    return sessionStorage.getItem(INTRO_SESSION_KEY) !== '1';
+  } catch {
+    return true;
+  }
+}
+
 export const App: React.FC = () => {
+  // First-load cinematic opening state (plays once per session, respects reduced-motion)
+  const [introState, setIntroState] = useState<'active' | 'revealing' | 'done'>(() =>
+    shouldPlayIntroOnMount() ? 'active' : 'done'
+  );
+  const [wasIntroSkipped, setWasIntroSkipped] = useState(false);
+
   // Modal State
   const [isContactOpen, setIsContactOpen] = useState(false);
 
@@ -76,10 +95,42 @@ export const App: React.FC = () => {
     gsap.ticker.add(updateLenis);
     gsap.ticker.lagSmoothing(0);
 
+    if (introState === 'active') {
+      lenis.stop();
+    }
+
     return () => {
       gsap.ticker.remove(updateLenis);
       lenis.destroy();
     };
+  }, []);
+
+  // Lock smooth scrolling only while the opening sequence is active; resume immediately on reveal or skip
+  useEffect(() => {
+    const lenis = lenisRef.current;
+    if (!lenis) return;
+    if (introState === 'active') {
+      lenis.stop();
+      if (window.scrollY !== 0) {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      lenis.start();
+    }
+  }, [introState]);
+
+  const handleIntroRevealStart = useCallback(() => {
+    setIntroState((prev) => (prev === 'active' ? 'revealing' : prev));
+  }, []);
+
+  const handleIntroComplete = useCallback((skipped: boolean) => {
+    try {
+      sessionStorage.setItem(INTRO_SESSION_KEY, '1');
+    } catch {
+      // Storage blocked in private contexts — continue gracefully
+    }
+    setWasIntroSkipped(skipped);
+    setIntroState('done');
   }, []);
 
   // 2. Setup GSAP ScrollTrigger Choreography
@@ -275,10 +326,24 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleExploreSystems = () => {
+    if (window.innerWidth >= 768 && page02RunwayRef.current) {
+      const targetY =
+        page02RunwayRef.current.offsetTop +
+        page02RunwayRef.current.offsetHeight -
+        window.innerHeight;
+      if (lenisRef.current) {
+        lenisRef.current.scrollTo(targetY, { duration: 2.0 });
+      } else {
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-[#181210] text-[#FAF7F2] overflow-x-hidden">
       {/* ========================================================
-          PAGE 01 VISUAL LAYER (Background Video & Atmosphere)
+          PAGE 01 VISUAL LAYER (Background Video & Cursor-Responsive Shader)
           Native video playback remains active and steady
           ======================================================== */}
       <div
@@ -286,7 +351,11 @@ export const App: React.FC = () => {
         id="page-01-scene"
         className="fixed inset-0 z-0 will-change-transform"
       >
-        <BackgroundVideo ref={videoWrapperRef} videoRef={videoElementRef} />
+        <BackgroundVideo
+          ref={videoWrapperRef}
+          videoRef={videoElementRef}
+          isActive={transitionProgress < 0.98 && !isContactOpen}
+        />
       </div>
 
       {/* ========================================================
@@ -341,21 +410,50 @@ export const App: React.FC = () => {
       {/* ========================================================
           PAGE 01 DOM UI LAYER (Header Navigation, Hero Editorial)
           ======================================================== */}
-      <Navigation
-        onOpenContact={() => setIsContactOpen(true)}
-        isMuted={isMuted}
-        onToggleSound={handleToggleSound}
-        onNavigateSection={(section) => {
-          if (section === 'work') handleExploreWork();
-          if (section === 'journey') handleStartJourney();
-          if (section === 'contact') setIsContactOpen(true);
-        }}
-      />
+      <div
+        id="page-01-ui-stage"
+        className="relative z-30 pointer-events-none"
+        style={
+          introState === 'done'
+            ? undefined
+            : {
+                opacity: introState === 'active' ? 0 : 1,
+                visibility: introState === 'active' ? 'hidden' : 'visible',
+                transition: wasIntroSkipped
+                  ? 'none'
+                  : 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+              }
+        }
+        aria-hidden={introState === 'active'}
+      >
+        <Navigation
+          onOpenContact={() => setIsContactOpen(true)}
+          isMuted={isMuted}
+          onToggleSound={handleToggleSound}
+          onNavigateSection={(section) => {
+            if (section === 'work') handleExploreWork();
+            if (section === 'systems') handleExploreSystems();
+            if (section === 'journey') handleStartJourney();
+            if (section === 'contact') setIsContactOpen(true);
+          }}
+        />
 
-      <HeroEditorial
-        onExploreWork={handleExploreWork}
-        onStartJourney={handleStartJourney}
-      />
+        <HeroEditorial
+          onExploreWork={handleExploreWork}
+          onStartJourney={handleStartJourney}
+        />
+      </div>
+
+      {/* ========================================================
+          FIRST-LOAD CINEMATIC OPENING (Plays once per session)
+          ======================================================== */}
+      {introState !== 'done' && (
+        <CinematicOpening
+          videoRef={videoElementRef}
+          onRevealStart={handleIntroRevealStart}
+          onComplete={handleIntroComplete}
+        />
+      )}
 
       {/* ========================================================
           SCROLL RUNWAYS (GSAP ScrollTrigger Synchronized)

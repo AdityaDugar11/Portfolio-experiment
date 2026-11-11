@@ -137,7 +137,11 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const videoTextureRef = useRef<THREE.VideoTexture | null>(null);
+  const progressRef = useRef<number>(progress);
+  const resumeLoopRef = useRef<(() => void) | null>(null);
   const [webGLSupported, setWebGLSupported] = useState(true);
+
+  progressRef.current = progress;
 
   // Check WebGL support
   useEffect(() => {
@@ -242,10 +246,16 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
     const quad = new THREE.Mesh(geometry, material);
     scene.add(quad);
 
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
-    // Render loop
+    // Render loop — runs only during active transition window and visible tab
     const animate = () => {
+      animFrameRef.current = null;
+      const p = progressRef.current;
+      if (p <= 0.001 || p >= 0.999 || document.hidden) {
+        return;
+      }
+
       const elapsedTime = clock.getElapsedTime();
       if (materialRef.current) {
         materialRef.current.uniforms.uTime.value = elapsedTime;
@@ -267,7 +277,19 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
       animFrameRef.current = requestAnimationFrame(animate);
     };
 
-    animFrameRef.current = requestAnimationFrame(animate);
+    const startTransitionLoop = () => {
+      if (
+        animFrameRef.current === null &&
+        progressRef.current > 0.001 &&
+        progressRef.current < 0.999 &&
+        !document.hidden
+      ) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      }
+    };
+    resumeLoopRef.current = startTransitionLoop;
+    document.addEventListener('visibilitychange', startTransitionLoop);
+    startTransitionLoop();
 
     // Resize handler
     const handleResize = () => {
@@ -288,12 +310,17 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
           textureB.needsUpdate = true;
         }
       }
+      if (progressRef.current > 0.001 && progressRef.current < 0.999) {
+        renderer.render(scene, camera);
+      }
     };
     window.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
+      resumeLoopRef.current = null;
+      document.removeEventListener('visibilitychange', startTransitionLoop);
       window.removeEventListener('resize', handleResize);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (animFrameRef.current !== null) cancelAnimationFrame(animFrameRef.current);
       geometry.dispose();
       material.dispose();
       defaultTextureA.dispose();
@@ -306,10 +333,13 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
     };
   }, [webGLSupported, videoRef]);
 
-  // Update progress uniform when prop changes
+  // Update progress uniform when prop changes and wake loop during transition
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.uniforms.uProgress.value = progress;
+    }
+    if (progress > 0.001 && progress < 0.999) {
+      resumeLoopRef.current?.();
     }
   }, [progress]);
 
