@@ -8,6 +8,7 @@ import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
 import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
 import { Page02Scene } from './components/Page02Scene';
+import { Page02EditorialScene } from './components/Page02EditorialScene';
 import { Page02MobileVertical } from './components/Page02MobileVertical';
 import { CinematicOpening } from './components/CinematicOpening';
 
@@ -53,8 +54,9 @@ export const App: React.FC = () => {
 
   // Scroll Progress Tracking
   const [transitionProgress, setTransitionProgress] = useState(0); // 0.0 to 1.0 (Page 1 -> Page 2 shader transition)
-  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Desktop Page 2 240-frame sequence & card reveal)
+  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Desktop Page 2 internal progress)
   const [mobilePage02Progress, setMobilePage02Progress] = useState(0); // 0.0 to 1.0 (Mobile Page 2 vertical cinematic scrollytelling)
+  const isLegacyPage02 = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('legacy') === '1';
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -369,9 +371,8 @@ export const App: React.FC = () => {
       />
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER: THE LIVING SIGNAL (DESKTOP & TABLET >= 768px)
-          Actual 240 WebP video frames + 10 chapter cards attached
-          to the actual terminal nodes. Strictly NO Page 3.
+          PAGE 02 VISUAL LAYER: EDITORIAL SCENE (MILESTONE 1: DESKTOP & TABLET >= 768px)
+          Authentic right-anchored portrait + pastel sky video + Chapter 01
           ======================================================== */}
       <div
         ref={page02SceneRef}
@@ -382,7 +383,14 @@ export const App: React.FC = () => {
           pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
         }}
       >
-        <Page02Scene progress={page02Progress} />
+        {isLegacyPage02 ? (
+          <Page02Scene progress={page02Progress} />
+        ) : (
+          <Page02EditorialScene
+            progress={page02Progress}
+            isVisible={transitionProgress >= 0.8}
+          />
+        )}
       </div>
 
       {/* ========================================================

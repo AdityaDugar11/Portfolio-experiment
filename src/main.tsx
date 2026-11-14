@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { Page02PortraitPrototype } from './components/Page02PortraitPrototype';
+import { Page02EditorialScene } from './components/Page02EditorialScene';
 import './index.css';
 
 function Root() {
@@ -32,16 +32,23 @@ function Root() {
 
   if (isPrototype) {
     return (
-      <Page02PortraitPrototype
-        onExit={() => {
-          window.location.hash = '';
-          const url = new URL(window.location.href);
-          url.searchParams.delete('preview');
-          url.searchParams.delete('prototype');
-          window.history.pushState({}, '', url.pathname);
-          setIsPrototype(false);
-        }}
-      />
+      <div className="relative w-full h-screen overflow-hidden">
+        <Page02EditorialScene progress={0.15} isVisible={true} />
+        <button
+          type="button"
+          onClick={() => {
+            window.location.hash = '';
+            const url = new URL(window.location.href);
+            url.searchParams.delete('preview');
+            url.searchParams.delete('prototype');
+            window.history.pushState({}, '', url.pathname);
+            setIsPrototype(false);
+          }}
+          className="fixed top-4 right-4 z-50 px-3.5 py-1.5 rounded-full bg-[#1A1412]/80 hover:bg-[#1A1412] backdrop-blur-md border border-[#FAF7F2]/20 text-xs font-mono text-[#FAF7F2] transition-colors cursor-pointer"
+        >
+          Exit Preview ✕
+        </button>
+      </div>
     );
   }
 

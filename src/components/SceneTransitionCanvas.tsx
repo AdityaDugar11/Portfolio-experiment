@@ -208,7 +208,7 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
       textureB = canvasTex;
 
       const img = new Image();
-      img.src = '/frames/page-02/frame_0001.webp';
+      img.src = '/assets/page-02/pastel-sky-poster.jpg';
       img.onload = () => {
         cachedSourceImg = img;
         const ctx = offscreenCanvas?.getContext('2d', { alpha: false });
@@ -218,7 +218,7 @@ export const SceneTransitionCanvas: React.FC<SceneTransitionCanvasProps> = ({
         }
       };
     } else {
-      textureB = textureLoader.load('/frames/page-02/frame_0001.webp');
+      textureB = textureLoader.load('/assets/page-02/pastel-sky-poster.jpg');
       textureB.colorSpace = THREE.SRGBColorSpace;
       textureB.minFilter = THREE.LinearFilter;
       textureB.magFilter = THREE.LinearFilter;
