@@ -47,6 +47,7 @@ export const Page02StoryExperience: React.FC<Page02StoryExperienceProps> = ({
       smoothWheel: true,
       wheelMultiplier: 1.0,
     });
+    (window as any).__lenis = lenis;
 
     lenis.on('scroll', ScrollTrigger.update);
     const updateLenis = (time: number) => lenis.raf(time * 1000);

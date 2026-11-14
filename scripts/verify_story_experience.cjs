@@ -115,25 +115,29 @@ async function main() {
     await cdp.send('Runtime.enable');
     await cdp.send('DOM.enable');
 
-    const targetUrl = 'http://localhost:4173/?preview=page-02-story';
-    console.log(`Navigating to ${targetUrl}...`);
-    await cdp.send('Page.navigate', { url: targetUrl });
-    await new Promise((r) => setTimeout(r, 2500));
-
-    // Set 1440 x 900
+    // Set 1440 x 900 BEFORE navigation to ensure correct viewport initialization
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1440,
       height: 900,
       deviceScaleFactor: 1,
       mobile: false,
     });
-    await new Promise((r) => setTimeout(r, 500));
 
-    const totalScrollHeight = await cdp.send('Runtime.evaluate', {
-      expression: `document.documentElement.scrollHeight - window.innerHeight`,
+    const targetUrl = 'http://localhost:4173/?preview=page-02-story';
+    console.log(`Navigating to ${targetUrl}...`);
+    await cdp.send('Page.navigate', { url: targetUrl });
+    await new Promise((r) => setTimeout(r, 2500));
+
+    // Ensure Lenis and ScrollTrigger sync with the emulated dimensions
+    const maxScrollData = await cdp.send('Runtime.evaluate', {
+      expression: `(() => {
+        if (window.__lenis) window.__lenis.resize();
+        if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+        return window.__lenis ? window.__lenis.limit : (document.documentElement.scrollHeight - window.innerHeight);
+      })()`,
       returnByValue: true,
     });
-    const maxScroll = totalScrollHeight.result.value || 3800;
+    const maxScroll = maxScrollData.result.value || 3780;
     console.log(`Measured Story Runway Scroll Height: ${maxScroll}px`);
 
     const statesToCapture = [
@@ -154,8 +158,13 @@ async function main() {
       },
       {
         name: 'story_04_ch03_state.png',
-        progressFraction: 0.85,
+        progressFraction: 0.75,
         description: 'Chapter 03 State: The Learning Curve, Converging 3D Spline Conduits, Luminous Nexus',
+      },
+      {
+        name: 'story_04b_ch03_independent.png',
+        progressFraction: 0.88,
+        description: 'Chapter 03 Climax: Independent Understanding, Synthesized Logic Beat',
       },
       {
         name: 'story_05_reverse_scrolled.png',
@@ -172,28 +181,33 @@ async function main() {
 
       console.log(`\nNavigating to ${state.description} (ScrollY: ${scrollY}px, P: ${state.progressFraction})...`);
       await cdp.send('Runtime.evaluate', {
-        expression: `window.scrollTo({ top: ${scrollY}, behavior: 'instant' });`,
+        expression: `(() => {
+          if (window.__lenis) {
+            window.__lenis.scrollTo(${scrollY}, { immediate: true });
+          } else {
+            window.scrollTo({ top: ${scrollY}, behavior: 'instant' });
+          }
+        })()`,
       });
-      await new Promise((r) => setTimeout(r, 900));
+      await new Promise((r) => setTimeout(r, 1200));
 
       // Extract HUD and scene metrics
       const evalData = await cdp.send('Runtime.evaluate', {
         expression: `(() => {
           const hud = document.querySelector('.font-mono.font-bold');
           const canvas = document.querySelector('#story-webgl-viewport canvas');
-          const visibleHeading = Array.from(document.querySelectorAll('#story-typography-stage h1, #story-typography-stage h2, #story-typography-stage p'))
-            .filter(el => {
-              const style = window.getComputedStyle(el);
-              return style.display !== 'none' && parseFloat(style.opacity || '1') > 0.5;
-            })
-            .map(el => el.textContent?.trim().slice(0, 60))[0];
+          const stage = document.getElementById('story-typography-stage');
+          const visibleBeat = stage ? Array.from(stage.children).find(c => {
+            const style = window.getComputedStyle(c);
+            return style.display !== 'none' && parseFloat(c.style.opacity || style.opacity || '0') > 0.5;
+          }) : null;
 
           return {
             hudText: hud?.textContent?.trim(),
             hasCanvas: !!canvas,
             canvasWidth: canvas?.width,
             canvasHeight: canvas?.height,
-            activeTextSnippet: visibleHeading || 'None',
+            activeTextSnippet: visibleBeat?.textContent?.replace(/\\s+/g, ' ').trim().slice(0, 75) || 'None',
           };
         })()`,
         returnByValue: true,
@@ -218,14 +232,26 @@ async function main() {
     await new Promise((r) => setTimeout(r, 500));
 
     // Capture Chapter 02 at 1280x720
-    await cdp.send('Runtime.evaluate', {
-      expression: `window.scrollTo({ top: ${Math.round(maxScroll * 0.48)}, behavior: 'instant' });`,
+    const scroll1280Res = await cdp.send('Runtime.evaluate', {
+      expression: `(() => {
+        if (window.__lenis) window.__lenis.resize();
+        if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+        const lim = window.__lenis ? window.__lenis.limit : (document.documentElement.scrollHeight - window.innerHeight);
+        const y = Math.round(lim * 0.48);
+        if (window.__lenis) {
+          window.__lenis.scrollTo(y, { immediate: true });
+        } else {
+          window.scrollTo({ top: y, behavior: 'instant' });
+        }
+        return { lim, y };
+      })()`,
+      returnByValue: true,
     });
-    await new Promise((r) => setTimeout(r, 900));
+    await new Promise((r) => setTimeout(r, 1000));
     const shot1280Ch2 = await cdp.send('Page.captureScreenshot', { format: 'png' });
     const out1280Ch2 = path.join(OUTPUT_DIR, 'story_1280x720_ch02.png');
     fs.writeFileSync(out1280Ch2, Buffer.from(shot1280Ch2.data, 'base64'));
-    console.log(`Saved 1280x720 Ch02 screenshot: ${out1280Ch2}`);
+    console.log(`Saved 1280x720 Ch02 screenshot: ${out1280Ch2} (scrollY: ${scroll1280Res.result.value.y}px)`);
 
     // --- GENERATE CONTINUOUS BROWSER RECORDING ---
     console.log('\n--- RECORDING SMOOTH STORY SCROLL SEQUENCE FOR MP4 ---');
@@ -237,6 +263,12 @@ async function main() {
       mobile: false,
     });
     await new Promise((r) => setTimeout(r, 400));
+    await cdp.send('Runtime.evaluate', {
+      expression: `(() => {
+        if (window.__lenis) window.__lenis.resize();
+        if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+      })()`,
+    });
 
     // Sample 32 frames forward and 16 frames backward
     const forwardSteps = 30;
@@ -247,7 +279,13 @@ async function main() {
       const p = step / forwardSteps;
       const scrollY = Math.round(maxScroll * p);
       await cdp.send('Runtime.evaluate', {
-        expression: `window.scrollTo({ top: ${scrollY}, behavior: 'instant' });`,
+        expression: `(() => {
+          if (window.__lenis) {
+            window.__lenis.scrollTo(${scrollY}, { immediate: true });
+          } else {
+            window.scrollTo({ top: ${scrollY}, behavior: 'instant' });
+          }
+        })()`,
       });
       await new Promise((r) => setTimeout(r, 120));
 
@@ -263,7 +301,13 @@ async function main() {
       const p = 1.0 - step / rewindSteps;
       const scrollY = Math.round(maxScroll * p);
       await cdp.send('Runtime.evaluate', {
-        expression: `window.scrollTo({ top: ${scrollY}, behavior: 'instant' });`,
+        expression: `(() => {
+          if (window.__lenis) {
+            window.__lenis.scrollTo(${scrollY}, { immediate: true });
+          } else {
+            window.scrollTo({ top: ${scrollY}, behavior: 'instant' });
+          }
+        })()`,
       });
       await new Promise((r) => setTimeout(r, 120));
 
