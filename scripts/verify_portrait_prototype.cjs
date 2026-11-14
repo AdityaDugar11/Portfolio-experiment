@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { spawn, execSync } = require('child_process');
+const { spawn } = require('child_process');
 
 const OUTPUT_DIR = path.join(__dirname, '../docs/screenshots');
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -57,25 +57,22 @@ async function waitForServer(port = 4173, maxAttempts = 30) {
   return false;
 }
 
-async function getPageWebSocketUrl(port = 9222, maxAttempts = 30) {
+async function getPageWebSocketUrl(port = 9225, maxAttempts = 30) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const res = await fetch(`http://localhost:${port}/json/list`);
       const pages = await res.json();
       const page = pages.find((p) => p.type === 'page');
-      if (page && page.webSocketDebuggerUrl) {
-        return page.webSocketDebuggerUrl;
-      }
+      if (page && page.webSocketDebuggerUrl) return page.webSocketDebuggerUrl;
     } catch {}
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 200));
   }
-  throw new Error('Could not connect to Chrome CDP after maximum attempts');
+  throw new Error('Chrome CDP connection timeout');
 }
 
 async function main() {
-  console.log('--- Starting Prototype Verification ---');
+  console.log('--- Starting Revised Prototype Verification ---');
 
-  // 1. Start preview server
   let previewProcess = null;
   const isServerRunning = await waitForServer(4173, 2);
   if (!isServerRunning) {
@@ -86,13 +83,9 @@ async function main() {
     });
     const ready = await waitForServer(4173, 25);
     if (!ready) throw new Error('Vite preview server failed to start');
-  } else {
-    console.log('Vite preview server already active on 4173');
   }
 
-  // 2. Launch Google Chrome headless
-  const chromePort = 9223;
-  console.log(`Launching Google Chrome (port ${chromePort})...`);
+  const chromePort = 9225;
   const chromeProcess = spawn(
     '/usr/bin/google-chrome',
     [
@@ -122,91 +115,59 @@ async function main() {
     const targetUrl = 'http://localhost:4173/?preview=page-02';
     console.log(`Navigating to ${targetUrl}...`);
     await cdp.send('Page.navigate', { url: targetUrl });
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 2200));
 
-    // Test 1: 1440 x 900 resolution
-    console.log('\n--- Evaluating at 1440 x 900 ---');
+    // 1. Capture 1440 x 900 clean composition
+    console.log('\n--- Capturing 1440 x 900 Clean Composition ---');
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1440,
       height: 900,
       deviceScaleFactor: 1,
       mobile: false,
     });
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 600));
 
     const eval1440 = await cdp.send('Runtime.evaluate', {
       expression: `(() => {
         const root = document.getElementById('page-02-portrait-prototype');
         const video = root?.querySelector('video');
         const img = root?.querySelector('img');
+        const hud = root?.querySelector('.absolute.top-4');
         return {
           rootExists: !!root,
-          video: video ? {
-            src: video.currentSrc,
-            poster: video.poster,
-            paused: video.paused,
-            muted: video.muted,
-            autoplay: video.autoplay,
-            loop: video.loop,
-            currentTime: video.currentTime,
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight
-          } : null,
-          image: img ? {
-            src: img.currentSrc,
-            naturalWidth: img.naturalWidth,
-            naturalHeight: img.naturalHeight,
-            clientWidth: img.clientWidth,
-            clientHeight: img.clientHeight,
-            complete: img.complete
-          } : null
+          hasHUD: !!hud,
+          video: {
+            paused: video?.paused,
+            muted: video?.muted,
+            currentTime: video?.currentTime
+          },
+          image: {
+            naturalWidth: img?.naturalWidth,
+            naturalHeight: img?.naturalHeight,
+            clientWidth: img?.clientWidth,
+            clientHeight: img?.clientHeight,
+            aspect: img ? (img.clientWidth / img.clientHeight).toFixed(3) : null
+          }
         };
       })()`,
       returnByValue: true,
     });
-
     console.log('1440x900 Evaluation result:', JSON.stringify(eval1440.result.value, null, 2));
 
-    // Capture 1440x900 with HUD
     const shot1440 = await cdp.send('Page.captureScreenshot', { format: 'png' });
-    const shot1440Path = path.join(OUTPUT_DIR, 'prototype_1440x900.png');
-    fs.writeFileSync(shot1440Path, Buffer.from(shot1440.data, 'base64'));
-    console.log(`Saved screenshot: ${shot1440Path}`);
-
-    // Hide HUD for clean composition screenshot
-    await cdp.send('Runtime.evaluate', {
-      expression: `(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        const hideBtn = buttons.find(b => b.textContent.includes('Hide HUD'));
-        if (hideBtn) hideBtn.click();
-      })()`,
-    });
-    await new Promise((r) => setTimeout(r, 300));
-
-    const shot1440Clean = await cdp.send('Page.captureScreenshot', { format: 'png' });
     const shot1440CleanPath = path.join(OUTPUT_DIR, 'prototype_1440x900_clean.png');
-    fs.writeFileSync(shot1440CleanPath, Buffer.from(shot1440Clean.data, 'base64'));
+    fs.writeFileSync(shot1440CleanPath, Buffer.from(shot1440.data, 'base64'));
     console.log(`Saved clean screenshot: ${shot1440CleanPath}`);
 
-    // Restore HUD
-    await cdp.send('Runtime.evaluate', {
-      expression: `(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        const showBtn = buttons.find(b => b.textContent.includes('Show HUD'));
-        if (showBtn) showBtn.click();
-      })()`,
-    });
-    await new Promise((r) => setTimeout(r, 300));
-
-    // Test 2: 1280 x 720 resolution
-    console.log('\n--- Evaluating at 1280 x 720 ---');
+    // 2. Capture 1280 x 720 clean composition
+    console.log('\n--- Capturing 1280 x 720 Clean Composition ---');
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: 1280,
       height: 720,
       deviceScaleFactor: 1,
       mobile: false,
     });
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 600));
 
     const eval1280 = await cdp.send('Runtime.evaluate', {
       expression: `(() => {
@@ -217,14 +178,13 @@ async function main() {
           rootExists: !!root,
           imageClientWidth: img?.clientWidth,
           imageClientHeight: img?.clientHeight,
-          aspectPreserved: img ? Math.abs((img.clientWidth / img.clientHeight) - (1086 / 1448)) < 0.02 : false,
+          aspect: img ? (img.clientWidth / img.clientHeight).toFixed(3) : null,
           videoPaused: video?.paused,
           videoCurrentTime: video?.currentTime
         };
       })()`,
       returnByValue: true,
     });
-
     console.log('1280x720 Evaluation result:', JSON.stringify(eval1280.result.value, null, 2));
 
     const shot1280 = await cdp.send('Page.captureScreenshot', { format: 'png' });
@@ -232,7 +192,7 @@ async function main() {
     fs.writeFileSync(shot1280Path, Buffer.from(shot1280.data, 'base64'));
     console.log(`Saved screenshot: ${shot1280Path}`);
 
-    console.log('\n--- Prototype Verification Completed Successfully ---');
+    console.log('\n--- Screenshots captured successfully ---');
   } finally {
     if (cdp) await cdp.close();
     chromeProcess.kill('SIGTERM');
@@ -241,6 +201,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Verification failed:', err);
+  console.error('Failed:', err);
   process.exit(1);
 });

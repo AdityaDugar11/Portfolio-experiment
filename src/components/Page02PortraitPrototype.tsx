@@ -15,9 +15,15 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(10);
   const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
-  const [showHUD, setShowHUD] = useState(true);
 
-  // Subtle mouse parallax state (restrained: max 5px)
+  // Debug HUD is FALSE by default (only visible if ?debug=1 or on pressing 'D')
+  const [showDebugHUD, setShowDebugHUD] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('debug') === '1' || params.get('debug') === 'true';
+  });
+
+  // Subtle mouse parallax state (restrained: max 4px)
   const targetOffsetRef = useRef({ x: 0, y: 0 });
   const currentOffsetRef = useRef({ x: 0, y: 0 });
   const animFrameRef = useRef<number | null>(null);
@@ -30,6 +36,17 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  // Keyboard shortcut: Press 'D' to toggle debug diagnostics
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setShowDebugHUD((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Video visibility management: pause when not visible, play when visible
@@ -70,7 +87,7 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
     };
   }, [hasEnded]);
 
-  // Subtle, restrained cursor parallax (damping lerp, respects reduced motion)
+  // Subtle, restrained cursor parallax (gentle damping lerp, respects reduced motion)
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
@@ -80,10 +97,10 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
       const normX = (e.clientX / innerWidth - 0.5) * 2; // -1 to 1
       const normY = (e.clientY / innerHeight - 0.5) * 2; // -1 to 1
 
-      // Subtle restrained max offset: ±5px horizontal, ±3px vertical
+      // Subtle restrained max offset: ±4px horizontal, ±2px vertical
       targetOffsetRef.current = {
-        x: normX * 5,
-        y: normY * 3,
+        x: normX * 4,
+        y: normY * 2,
       };
     };
 
@@ -94,13 +111,11 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseleave', handleMouseLeave);
 
-    // Smooth RAF loop for lerping
     const render = () => {
       currentOffsetRef.current.x += (targetOffsetRef.current.x - currentOffsetRef.current.x) * 0.08;
       currentOffsetRef.current.y += (targetOffsetRef.current.y - currentOffsetRef.current.y) * 0.08;
 
       if (portraitRef.current) {
-        // Foreground moves with cursor
         portraitRef.current.style.transform = `translate3d(calc(-50% + ${currentOffsetRef.current.x.toFixed(2)}px), ${currentOffsetRef.current.y.toFixed(2)}px, 0)`;
       }
 
@@ -134,7 +149,9 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
       {/* ========================================================
           LAYER 1: PASTEL SKY BACKGROUND VIDEO
           - Autoplay, muted, playsInline, static poster fallback
-          - Strictly no loop until seamless loop verified
+          - Subtle restrained color treatment to restore natural pastel
+            pink, peach, soft lavender and periwinkle blue without artificial saturation
+          - Zero dark overlay tinting that muddies the sky
           ======================================================== */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <video
@@ -156,77 +173,69 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
             setCurrentTime(v.currentTime);
             if (v.duration) setDuration(v.duration);
           }}
-          className="w-full h-full object-cover object-center pointer-events-none scale-[1.03]"
-        />
-
-        {/* Subtle atmospheric vignette and floor grounding gradient
-            Applied strictly behind subject, never over face */}
-        <div
-          className="absolute inset-0 pointer-events-none"
+          className="w-full h-full object-cover object-center pointer-events-none scale-[1.02]"
           style={{
-            background:
-              'radial-gradient(ellipse 90% 85% at 50% 50%, transparent 55%, rgba(24, 18, 16, 0.28) 100%), linear-gradient(to top, rgba(24, 18, 16, 0.38) 0%, rgba(24, 18, 16, 0.12) 18%, transparent 45%)',
+            filter: 'saturate(1.22) contrast(1.05) brightness(1.03)',
           }}
         />
       </div>
 
       {/* ========================================================
           LAYER 2: FOREGROUND REALISTIC PORTRAIT LAYER
-          - Transparent PNG (`aditya-transparent.png`)
-          - Anchored naturally at the bottom
-          - Complete portrait preserved without stretching
-          - Subtle restrained positioning animation (no facial distortion, no artificial glow)
+          - Revised transparent PNG (`aditya-transparent.png`) with
+            extended, anatomically rounded right shoulder and sleeve drape
+          - Scaled for commanding photographic presence (92vh)
+          - Natural bottom anchoring directly at viewport bottom
+          - Original face, hair, and clothing pixels 100% UNTOUCHED
+          - filter: none (zero color adjustments on the portrait)
           ======================================================== */}
       <div
         ref={portraitRef}
+        id="portrait-layer"
         className="absolute bottom-0 left-1/2 z-10 will-change-transform pointer-events-none"
         style={{
           transform: 'translate3d(-50%, 0, 0)',
-          height: '84vh',
-          maxHeight: '84vh',
+          height: '92vh',
+          maxHeight: '92vh',
         }}
       >
         <img
           src="/assets/page-02/aditya-transparent.png"
           alt="Aditya Dugar"
-          className="h-full w-auto object-contain object-bottom block select-none pointer-events-none filter-none"
+          className="h-full w-auto object-contain object-bottom block select-none pointer-events-none"
           style={{
-            aspectRatio: '1086 / 1448',
+            aspectRatio: '1175 / 1448',
+            filter: 'none',
           }}
           draggable={false}
         />
       </div>
 
       {/* ========================================================
-          LAYER 3: PROTOTYPE DIAGNOSTIC HUD & EXIT CONTROLLER
-          - Viewport indicator (1440x900 / 1280x720 validation)
-          - Video playback status & replay control
-          - Seamless exit back to main experience
+          LAYER 3: DEBUG DIAGNOSTICS (HIDDEN BY DEFAULT)
+          - Only visible when explicitly requested (?debug=1 or press 'D')
+          - Clean presentation has ZERO developer overlays
           ======================================================== */}
-      {showHUD && (
+      {showDebugHUD && (
         <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
-          {/* Left: Project title & Prototype identifier */}
           <div className="flex items-center gap-3 pointer-events-auto">
-            <div className="px-3.5 py-1.5 rounded-full bg-[#181210]/75 backdrop-blur-md border border-[#FAF7F2]/15 text-xs text-[#FAF7F2]/90 font-mono shadow-lg flex items-center gap-2">
+            <div className="px-3.5 py-1.5 rounded-full bg-[#181210]/80 backdrop-blur-md border border-[#FAF7F2]/15 text-xs text-[#FAF7F2]/90 font-mono shadow-lg flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#FF7E67] animate-pulse" />
-              <span className="font-semibold tracking-wide">PAGE 02 PROTOTYPE</span>
+              <span className="font-semibold tracking-wide">PAGE 02 DEBUG</span>
               <span className="text-[#FAF7F2]/40">|</span>
-              <span className="text-[#FAF7F2]/70">Portrait + Sky Compositing</span>
+              <span className="text-[#FAF7F2]/70">Extended Shoulder</span>
             </div>
           </div>
 
-          {/* Right: Controls & Metrics */}
           <div className="flex items-center gap-2 pointer-events-auto">
-            {/* Resolution Badge */}
-            <div className="hidden sm:flex items-center px-3 py-1.5 rounded-full bg-[#181210]/75 backdrop-blur-md border border-[#FAF7F2]/15 text-xs font-mono text-[#FAF7F2]/80">
+            <div className="hidden sm:flex items-center px-3 py-1.5 rounded-full bg-[#181210]/80 backdrop-blur-md border border-[#FAF7F2]/15 text-xs font-mono text-[#FAF7F2]/80">
               <span>Viewport:</span>
               <span className="ml-1.5 text-[#FF7E67] font-semibold">
                 {viewportSize.w} × {viewportSize.h}
               </span>
             </div>
 
-            {/* Video Status & Replay */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#181210]/75 backdrop-blur-md border border-[#FAF7F2]/15 text-xs font-mono text-[#FAF7F2]/80">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#181210]/80 backdrop-blur-md border border-[#FAF7F2]/15 text-xs font-mono text-[#FAF7F2]/80">
               <span>Video:</span>
               <span className={isPlaying ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
                 {isPlaying ? 'Playing' : hasEnded ? 'Ended' : 'Paused'}
@@ -243,47 +252,18 @@ export const Page02PortraitPrototype: React.FC<Page02PortraitPrototypeProps> = (
               )}
             </div>
 
-            {/* Hide HUD Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowHUD(false)}
-              className="px-2.5 py-1.5 rounded-full bg-[#181210]/75 hover:bg-[#181210] backdrop-blur-md border border-[#FAF7F2]/15 text-xs font-mono text-[#FAF7F2]/70 hover:text-white transition-colors cursor-pointer"
-              title="Hide HUD (Press H to restore)"
-            >
-              Hide HUD
-            </button>
-
-            {/* Return to Full Site */}
             {onExit && (
               <button
                 type="button"
                 onClick={onExit}
                 className="px-3.5 py-1.5 rounded-full bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 backdrop-blur-md border border-[#FAF7F2]/20 text-xs font-mono text-[#FAF7F2] transition-colors cursor-pointer"
               >
-                Exit Prototype ✕
+                Exit ✕
               </button>
             )}
           </div>
         </div>
       )}
-
-      {/* Floating restore button when HUD is hidden */}
-      {!showHUD && (
-        <button
-          type="button"
-          onClick={() => setShowHUD(true)}
-          className="absolute top-4 right-4 z-30 px-3 py-1.5 rounded-full bg-[#181210]/60 hover:bg-[#181210]/90 backdrop-blur-md border border-[#FAF7F2]/15 text-xs font-mono text-[#FAF7F2]/60 hover:text-white transition-colors cursor-pointer"
-        >
-          Show HUD
-        </button>
-      )}
-
-      {/* Subtle bottom caption */}
-      <div className="absolute bottom-4 left-6 z-20 pointer-events-none hidden md:block">
-        <p className="text-[11px] font-mono tracking-widest text-[#FAF7F2]/40 uppercase">
-          Aditya Dugar · The Living Signal · Isolated Composure Prototype
-        </p>
-      </div>
     </div>
   );
 };
