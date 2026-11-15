@@ -6,13 +6,15 @@ These instructions apply to every coding agent and every conversation working in
 
 When resolving requirements or priorities, strictly follow this hierarchy:
 1. **Latest explicit directives from the owner.**
-2. [`docs/MASTER_CREATIVE_BRIEF.md`](docs/MASTER_CREATIVE_BRIEF.md) — Overarching vision, complete ten-chapter narrative, four cinematic sequences, aesthetic philosophy, and technical architecture for the entire portfolio.
-3. [`docs/reference/act-01-master-storyboard.png`](docs/reference/act-01-master-storyboard.png) — Authoritative visual reference for Act 01 composition, sunset-lakeside environment, architectural framing, realistic human portrait, floating holographic tech elements, and 5-stage scroll choreography.
-4. [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md) and [`docs/ACT_01_SPEC.md`](docs/ACT_01_SPEC.md) — Detailed design specifications, interaction tokens, and stage-by-stage implementation specifications.
-5. Supporting visual references — Supplementary inspiration translated into contemporary 3D elements.
-6. Existing portfolio (`https://adityadugar.vercel.app/`) — Content, personal details, project links, assets, and functionality source ONLY (never visual design).
+2. [`docs/PAGE_02_CREATIVE_DIRECTION.md`](docs/PAGE_02_CREATIVE_DIRECTION.md) — Authoritative creative specification for Page 02 ("Every Idea Leaves a Trace — The Living Trace"), governing all scene compositions, trace evolutions, responsive adaptations, and interaction choreography for Page 02.
+3. [`docs/MASTER_CREATIVE_BRIEF.md`](docs/MASTER_CREATIVE_BRIEF.md) — Overarching vision, complete ten-chapter narrative, four cinematic sequences, aesthetic philosophy, and technical architecture for the entire portfolio.
+4. [`docs/reference/act-01-master-storyboard.png`](docs/reference/act-01-master-storyboard.png) — Authoritative visual reference for Act 01 composition, sunset-lakeside environment, architectural framing, realistic human portrait, floating holographic tech elements, and 5-stage scroll choreography.
+5. [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md) and [`docs/ACT_01_SPEC.md`](docs/ACT_01_SPEC.md) — Detailed design specifications, interaction tokens, and stage-by-stage implementation specifications for Act 01.
+6. Supporting visual references — Supplementary inspiration translated into contemporary 3D elements.
+7. Existing portfolio (`https://adityadugar.vercel.app/`) — Content, personal details, project links, assets, and functionality source ONLY (never visual design).
 
 Do not make changes to the approved visual composition, themes, or layouts without the owner's explicit permission.
+Page 01 design, assets, and behavior remain strictly protected. Superseded Page 02 implementations (240-frame anime sequence, 10 orbital constellation cards, monolith prototypes, and static split-screen editorial layouts) are obsolete and must not be reintroduced.
 
 ## 2. Non-Negotiable Design & Visual Decisions
 
@@ -49,6 +51,9 @@ Never introduce or reintroduce:
 - ❌ Invented biography, accomplishments, metrics, clients, expertise, or work history.
 - ❌ Location labels (e.g. Bikaner, Udaipur) added to website text.
 - ❌ Autoplay audio or ripped YouTube tracks.
+- ❌ Superseded Page 02 directions: anime character surrounded by orbital rings, floating 10-card constellation, 3D monolith metaphors, static 52/48 split-screen portrait/text layouts, or 32vh mobile headers with disconnected card lists.
+- ❌ Fabricated live system telemetry, simulated CPU/memory numbers, or fake PR metrics.
+- ❌ Biometric gaze tracking, webcam access, or simulated eye movement on static portrait photographs.
 
 ## 4. Protect Existing Work and Data
 

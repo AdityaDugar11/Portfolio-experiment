@@ -10,6 +10,7 @@ import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
 import { Page02Scene } from './components/Page02Scene';
 import { Page02EditorialScene } from './components/Page02EditorialScene';
 import { Page02MobileVertical } from './components/Page02MobileVertical';
+import { Page02LivingTrace } from './components/Page02LivingTrace';
 import { CinematicOpening } from './components/CinematicOpening';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -57,6 +58,7 @@ export const App: React.FC = () => {
   const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Desktop Page 2 internal progress)
   const [mobilePage02Progress, setMobilePage02Progress] = useState(0); // 0.0 to 1.0 (Mobile Page 2 vertical cinematic scrollytelling)
   const isLegacyPage02 = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('legacy') === '1';
+  const isEditorialPage02 = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v') === 'editorial';
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -371,8 +373,8 @@ export const App: React.FC = () => {
       />
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER: EDITORIAL SCENE (MILESTONE 1: DESKTOP & TABLET >= 768px)
-          Authentic right-anchored portrait + pastel sky video + Chapter 01
+          PAGE 02 VISUAL LAYER: THE LIVING TRACE (DESKTOP & TABLET >= 768px)
+          Authentic human opening -> camera push into subsurface systems investigation
           ======================================================== */}
       <div
         ref={page02SceneRef}
@@ -385,19 +387,26 @@ export const App: React.FC = () => {
       >
         {isLegacyPage02 ? (
           <Page02Scene progress={page02Progress} />
-        ) : (
+        ) : isEditorialPage02 ? (
           <Page02EditorialScene
             progress={page02Progress}
             isVisible={transitionProgress >= 0.8}
+          />
+        ) : (
+          <Page02LivingTrace
+            progress={page02Progress}
+            isVisible={transitionProgress >= 0.8}
+            onExploreWork={handleExploreWork}
+            onStartJourney={handleStartJourney}
+            onOpenContact={() => setIsContactOpen(true)}
           />
         )}
       </div>
 
       {/* ========================================================
-          PAGE 02 VISUAL LAYER: VERTICAL CINEMATIC SCROLLYTELLING (MOBILE < 768px)
-          Single continuous cinematic character-and-orbital world.
-          Vertical finger scrolling navigates downward through the tall virtual scene.
-          Strictly NO horizontal panning, NO plain list, NO Page 3.
+          PAGE 02 VISUAL LAYER: THE LIVING TRACE (MOBILE < 768px)
+          Single continuous vertical world: opening portrait -> vertical trace plunge -> subsurface investigation
+          Strictly NO horizontal panning, NO plain list, NO carousels.
           ======================================================== */}
       <div
         id="page-02-mobile-scene"
@@ -407,12 +416,22 @@ export const App: React.FC = () => {
           pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
         }}
       >
-        <Page02MobileVertical
-          progress={mobilePage02Progress}
-          onExploreWork={handleExploreWork}
-          onStartJourney={handleStartJourney}
-          onOpenContact={() => setIsContactOpen(true)}
-        />
+        {isLegacyPage02 || isEditorialPage02 ? (
+          <Page02MobileVertical
+            progress={mobilePage02Progress}
+            onExploreWork={handleExploreWork}
+            onStartJourney={handleStartJourney}
+            onOpenContact={() => setIsContactOpen(true)}
+          />
+        ) : (
+          <Page02LivingTrace
+            progress={mobilePage02Progress}
+            isVisible={transitionProgress >= 0.8}
+            onExploreWork={handleExploreWork}
+            onStartJourney={handleStartJourney}
+            onOpenContact={() => setIsContactOpen(true)}
+          />
+        )}
       </div>
 
       {/* ========================================================

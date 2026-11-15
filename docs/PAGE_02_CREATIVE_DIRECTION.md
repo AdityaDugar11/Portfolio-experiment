@@ -33,7 +33,7 @@ flowchart LR
 ### 1.2 The Seven Behavioral States of the Living Trace
 
 1. **Observation (Chapter 01 — The Beginning):**
-   - *Form & Behavior:* The trace originates as a delicate point of focus and a warm, low-intensity filament of light that subtly tracks Aditya’s gaze in the opening scene. It is quiet, contemplative, and unhurried—representing the spark of an unanswered question.
+   - *Form & Behavior:* The trace originates as a delicate point of focus and a warm, low-intensity filament of light that subtly follows the narrative focal point—illuminating the central statement and guiding the eye toward the opening question. (Note: The approved portrait is a static photograph; zero webcam, biometric gaze tracking, or simulated eye movement is permitted). It is quiet, contemplative, and unhurried—representing the spark of an unanswered question.
 2. **Investigation (Chapter 02 — Beyond the Interface):**
    - *Form & Behavior:* As curiosity deepens, the trace gains structural acuity. It does not peel like physical paper; it *penetrates* the visual surface plane, revealing the inner routing of services, data packets, and operating system logic. The light shifts from soft peach into warm amber and clear phosphor.
 3. **Friction (Chapter 03 — The Learning Curve):**
@@ -65,7 +65,7 @@ flowchart LR
 *Rejecting the static 52/48 left-text/right-portrait split. Embracing fluid cinematic camera reframing.*
 
 ```
-CHAPTER 01: THE OPENING CONVERGENCE
+CHAPTER 01: THE OPENING CONVERGENCE (TEMPORARY CINEMATIC MOMENT)
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ NAVIGATION: ADITYA DUGAR · WORK · SYSTEMS · JOURNEY · GET IN TOUCH ↗        │
 ├──────────────────────────────────────┬──────────────────────────────────────┤
@@ -73,13 +73,15 @@ CHAPTER 01: THE OPENING CONVERGENCE
 │ "I follow questions until            │ Anchored naturally in scene          │
 │ they become something I can build."  │ Warm sunset horizon continuous       │
 │                                      │ from Act 01.                         │
-│ Faint observation trace sparks       │ Trace tracks focal line.             │
+│ Faint observation trace sparks       │ Trace follows central statement.     │
 └──────────────────────────────────────┴──────────────────────────────────────┘
-                          │ (Scroll scrub initiates camera push)
+                          │ (Scroll scrub initiates camera push into scene)
+                          │ (Camera accelerates toward the narrative trace)
+                          │ (Portrait recedes naturally; NOT a static 2-col layout)
                           ▼
-CHAPTER 02: PENETRATING THE SURFACE
+CHAPTER 02: PENETRATING THE SUBSURFACE INVESTIGATION ENVIRONMENT
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ (Camera glides forward & reframes; Portrait gracefully recedes off-camera)   │
+│ (Camera moves deeply into the visual trace; Portrait recedes off-camera)    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Headline & Story:                    │ SUBSURFACE INVESTIGATION FIELD       │
 │ "There's always more happening       │ Trace penetrates surface plane,      │
@@ -272,7 +274,7 @@ Per mandatory owner requirements, we conduct an explicit authenticity audit. No 
 | **Chapter 02: System Calls** | Exact kernel version (`6.8.0`), process PID, hardcoded strace logs | **UNVERIFIED SPECIFIC** | **APPROVED APPROACH:** Present as a generic, educational POSIX system-level illustration (`Conceptual System Telemetry: POSIX Socket & IPC Communication`), demonstrating architectural principles rather than claiming historical hardware traces. |
 | **Chapter 03: Debugging** | Specific JavaScript stack traces, exact unit test counts (`✓ 14 passing`) | **UNVERIFIED SPECIFIC** | **APPROVED APPROACH:** Use an illustrative, realistic debugging snippet labelled as an illustrative debugging cycle (`Example: Resolving runtime type impedance and async resolution`), focusing on the methodology of problem-solving. |
 | **Chapter 05: System Topology** | Tech stack connections (FastAPI, React, Ollama, Supabase) | **VERIFIED CAPABILITY / CONCEPTUAL ARCHITECTURE** | Must be clearly presented as Aditya’s architectural approach to modern full-stack and local AI applications, not a claim that all tools were combined in a single production system. |
-| **Chapter 08: Experimental Lab** | Live CPU/memory % dials, fake GPU telemetry | **UNVERIFIED NUMERIC** | **APPROVED APPROACH:** Replace static fake numbers with an interactive sandbox showing actual local LLM prompt flow or ComfyUI node connections, labelled as experimental workflows. |
+| **Chapter 08: Experimental Lab** | Local Ollama, ComfyUI node graphs, Linux system metrics | **PROHIBITED TO CLAIM LIVE**: Public client cannot access owner's local machines. | **APPROVED APPROACH:** Use owner-approved captured experiment recordings, clearly labelled illustrative interactive demonstrations, or client-side simulations. Never fabricate live system telemetry or simulate fake live metrics. |
 
 ---
 

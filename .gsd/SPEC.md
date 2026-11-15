@@ -1,8 +1,8 @@
 # SPEC.md — The Living Signal: Page 02 Creative Direction & Responsive Scrollytelling
 
-**Status:** PENDING_APPROVAL  
-**Last Updated:** 2026-11-15 (Revision 01 Applied)  
-**Governing Rule:** Planning Lock active. No implementation code until status is `FINALIZED`.
+**Status:** FINALIZED (Milestone 1 Prototype Authorized by Owner)  
+**Last Updated:** 2026-11-15 (Final Owner Review Applied)  
+**Governing Rule:** Planning Lock released for authorized Milestone 1: Page 01 transition → Chapter 01 → Chapter 02.
 
 ## 1. Objective
 Create an original, immersive, cinematic storyscrollytelling experience for Page 02 of *The Living Signal*, executing the creative concept: **"EVERY IDEA LEAVES A TRACE"**.
