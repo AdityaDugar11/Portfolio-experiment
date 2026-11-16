@@ -257,10 +257,10 @@
   .qs-desktop-only { display: none; }
   .qs-scroll-cue { left: 23px; bottom: 3.4vh; gap: 9px; font-size: 8px; }
   .qs-scroll-cue b { font-size: 15px; }
-  .qs-question-label { left: 22px; top: 31vh; font-size: 8px; }
+  .qs-question-label { left: 22px; top: 34vh; font-size: 8px; }
   .qs-question {
     left: 20px;
-    top: 38vh;
+    top: 40vh;
     width: calc(100vw - 36px);
     font-size: clamp(51px, 13.8vw, 64px);
     line-height: .98;

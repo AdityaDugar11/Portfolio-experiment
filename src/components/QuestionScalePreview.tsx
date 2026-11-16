@@ -42,7 +42,7 @@ export function QuestionScalePreview() {
         .to(quoteRef.current, {
           scale: 0.46,
           xPercent: -5,
-          yPercent: isMobile ? -140 : -34,
+          yPercent: isMobile ? -230 : -50,
           opacity: 0.72,
           duration: 0.35,
           ease: 'power2.inOut',
@@ -113,8 +113,8 @@ export function QuestionScalePreview() {
         }, 0.69)
         .fromTo(chapterTitleRef.current,
           { clipPath: 'inset(0 0 100% 0)' },
-          { clipPath: 'inset(0 0 0% 0)', duration: 0.28, ease: 'power2.inOut' },
-          0.74
+          { clipPath: 'inset(0 0 0% 0)', duration: 0.15, ease: 'power2.inOut' },
+          0.69
         )
         .to(progressRef.current, { scaleX: 1, duration: 1, ease: 'none' }, 0);
 
@@ -140,7 +140,7 @@ export function QuestionScalePreview() {
               <span>until they become</span>
               <span>something I can build.</span>
             </h1>
-            <p className="qs-bio" ref={bioRef}>Software Engineering student at Jain University.<br className="qs-desktop-only" /> Curious about what makes things work.</p>
+            <p className="qs-bio" ref={bioRef}>Software Engineering student at Jain University.<br className="qs-desktop-only" /> I find myself drawn towards things I don’t fully understand yet.</p>
             <img
               ref={portraitRef}
               className="qs-portrait"
@@ -156,13 +156,13 @@ export function QuestionScalePreview() {
             <h2 className="qs-question" ref={questionRef}>
               What happens<br />behind an<br />application?
             </h2>
-            <p className="qs-question-note" ref={questionNoteRef}>The first thing I want to understand is what I can’t see.</p>
+            <p className="qs-question-note" ref={questionNoteRef}>I find myself looking beyond what something does and becoming curious about how it actually works.</p>
           </div>
 
           <div className="qs-chapter" ref={chapterRef}>
             <p className="qs-chapter-number">CHAPTER 02 <span>·</span> BEYOND THE INTERFACE</p>
             <h2 className="qs-chapter-title" ref={chapterTitleRef}>There’s always more happening<br className="qs-desktop-only" /> beneath the surface.</h2>
-            <p className="qs-chapter-copy">A tool can be useful. An interface can be beautiful. What interests me is understanding what makes them possible.</p>
+            <p className="qs-chapter-copy">A tool can be useful. A system can be powerful. An interface can be beautiful. But what interests me is understanding what makes them possible.</p>
             <p className="qs-chapter-foot">APPLICATIONS <span>·</span> LINUX <span>·</span> AI MODELS <span>·</span> WEB EXPERIENCES</p>
           </div>
 
