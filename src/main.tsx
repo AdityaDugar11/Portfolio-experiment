@@ -4,12 +4,14 @@ import App from './App';
 import { Page02EditorialScene } from './components/Page02EditorialScene';
 import { Page02StoryExperience } from './components/Page02StoryExperience';
 import { Page02LivingTrace } from './components/Page02LivingTrace';
+import { QuestionScalePreview } from './components/QuestionScalePreview';
 import './index.css';
 
 function Root() {
-  const [activePreview, setActivePreview] = useState<'none' | 'editorial' | 'story' | 'trace'>(() => {
+  const [activePreview, setActivePreview] = useState<'none' | 'editorial' | 'story' | 'trace' | 'question-scale'>(() => {
     if (typeof window === 'undefined') return 'none';
     const params = new URLSearchParams(window.location.search);
+    if (params.get('preview') === 'question-scale') return 'question-scale';
     if (params.get('preview') === 'trace' || params.get('preview') === 'living-trace' || window.location.hash === '#trace') {
       return 'trace';
     }
@@ -31,7 +33,9 @@ function Root() {
   useEffect(() => {
     const handleHashOrPopState = () => {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('preview') === 'trace' || params.get('preview') === 'living-trace' || window.location.hash === '#trace') {
+      if (params.get('preview') === 'question-scale') {
+        setActivePreview('question-scale');
+      } else if (params.get('preview') === 'trace' || params.get('preview') === 'living-trace' || window.location.hash === '#trace') {
         setActivePreview('trace');
       } else if (params.get('preview') === 'page-02-story' || window.location.hash === '#story') {
         setActivePreview('story');
@@ -61,6 +65,8 @@ function Root() {
     window.history.pushState({}, '', url.pathname);
     setActivePreview('none');
   };
+
+  if (activePreview === 'question-scale') return <QuestionScalePreview />;
 
   if (activePreview === 'trace') {
     return (
