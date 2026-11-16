@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './QuestionScalePreview.css';
@@ -20,6 +20,34 @@ export function QuestionScalePreview() {
   const chapterRef = useRef<HTMLDivElement>(null);
   const chapterTitleRef = useRef<HTMLHeadingElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    video.defaultMuted = true;
+    video.volume = 0;
+
+    const syncPlayback = () => {
+      if (document.visibilityState === 'hidden') {
+        video.pause();
+        return;
+      }
+      video.play().catch(() => {
+        // The poster remains visible if autoplay is blocked.
+      });
+    };
+
+    document.addEventListener('visibilitychange', syncPlayback);
+    syncPlayback();
+
+    return () => {
+      document.removeEventListener('visibilitychange', syncPlayback);
+      video.pause();
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const runway = runwayRef.current;
@@ -44,23 +72,23 @@ export function QuestionScalePreview() {
           xPercent: -5,
           yPercent: isMobile ? -230 : -50,
           opacity: 0.72,
-          duration: 0.35,
+          duration: 0.3,
           ease: 'power2.inOut',
-        }, 0.1)
+        }, 0.08)
         .to(portraitRef.current, {
           xPercent: isMobile ? 0 : -25,
-          yPercent: isMobile ? -34 : -12,
-          scale: isMobile ? 0.32 : 0.54,
+          yPercent: 0,
+          scale: isMobile ? 0.55 : 0.7,
           opacity: 0.82,
           duration: 0.42,
           ease: 'power2.inOut',
-        }, 0.15)
+        }, 0.16)
         .to([bioRef.current, cueRef.current], {
           opacity: 0,
           y: 18,
           duration: 0.14,
           ease: 'power1.in',
-        }, 0.17)
+        }, 0.16)
         .to(kickerRef.current, {
           opacity: 0,
           y: -10,
@@ -71,50 +99,50 @@ export function QuestionScalePreview() {
           scale: 0.22,
           yPercent: -112,
           opacity: 0,
-          duration: 0.2,
+          duration: 0.13,
           ease: 'power2.in',
-        }, 0.58)
+        }, 0.63)
         .to(questionRef.current, {
           opacity: 1,
           scale: 1,
           xPercent: 0,
           yPercent: 0,
-          duration: 0.3,
+          duration: 0.2,
           ease: 'power3.out',
-        }, 0.22)
+        }, 0.37)
         .fromTo(questionLabelRef.current,
           { opacity: 0, x: -22 },
           { opacity: 1, x: 0, duration: 0.2, ease: 'power2.out' },
-          0.22
+          0.37
         )
         .fromTo(questionNoteRef.current,
           { opacity: 0, y: 14 },
           { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' },
-          0.34
+          0.45
         )
         .to(questionRef.current, {
           scale: 0.35,
           xPercent: 0,
           yPercent: -115,
           opacity: 0,
-          duration: 0.2,
+          duration: 0.13,
           ease: 'power2.inOut',
-        }, 0.58)
+        }, 0.63)
         .to([questionLabelRef.current, questionNoteRef.current], {
           opacity: 0,
           duration: 0.12,
           ease: 'power1.in',
-        }, 0.58)
+        }, 0.63)
         .to(chapterRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.22,
+          duration: 0.18,
           ease: 'power2.out',
-        }, 0.69)
+        }, 0.77)
         .fromTo(chapterTitleRef.current,
           { clipPath: 'inset(0 0 100% 0)' },
           { clipPath: 'inset(0 0 0% 0)', duration: 0.15, ease: 'power2.inOut' },
-          0.69
+          0.79
         )
         .to(progressRef.current, { scaleX: 1, duration: 1, ease: 'none' }, 0);
 
@@ -128,6 +156,22 @@ export function QuestionScalePreview() {
     <main className="question-scale" ref={stageRef}>
       <section className="qs-runway" ref={runwayRef} aria-label="The question changes scale">
         <div className="qs-sticky">
+          <div className="qs-video-layer" aria-hidden="true">
+            <video
+              ref={videoRef}
+              className="qs-video"
+              src="/assets/page-02/pastel-sky.mp4"
+              poster="/assets/page-02/pastel-sky-poster.jpg"
+              autoPlay
+              muted
+              playsInline
+              controls={false}
+              loop={false}
+              preload="auto"
+              tabIndex={-1}
+            />
+            <div className="qs-readability" />
+          </div>
           <header className="qs-masthead">
             <span className="qs-wordmark">THE LIVING SIGNAL</span>
             <span className="qs-section">01 — 02 <i aria-hidden="true">/</i> THE QUESTION CHANGES SCALE</span>
