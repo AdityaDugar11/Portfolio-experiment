@@ -1,3 +1,5 @@
+> **Superseded:** The Page 02 visual direction in this document is historical. See [PAGE_02_WORLD_SPEC.md](PAGE_02_WORLD_SPEC.md) for the current direction. Canonical story content remains in STORY_CONTENT.md.
+
 # THE LIVING SIGNAL — PAGE 02: "EVERY IDEA LEAVES A TRACE"
 ## Revised Master Creative Direction & Responsive Scrollytelling Specification (Revision 01)
 

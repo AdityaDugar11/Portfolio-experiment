@@ -6,11 +6,6 @@ import { BackgroundVideo } from './components/BackgroundVideo';
 import { Navigation } from './components/Navigation';
 import { HeroEditorial } from './components/HeroEditorial';
 import { ContactModal } from './components/ContactModal';
-import { SceneTransitionCanvas } from './components/SceneTransitionCanvas';
-import { Page02Scene } from './components/Page02Scene';
-import { Page02EditorialScene } from './components/Page02EditorialScene';
-import { Page02MobileVertical } from './components/Page02MobileVertical';
-import { Page02LivingTrace } from './components/Page02LivingTrace';
 import { CinematicOpening } from './components/CinematicOpening';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -43,22 +38,16 @@ export const App: React.FC = () => {
   // Runway Refs (Strictly Page 01 -> Transition -> Page 02)
   const page01RunwayRef = useRef<HTMLDivElement>(null);
   const transitionRunwayRef = useRef<HTMLDivElement>(null);
-  const page02RunwayRef = useRef<HTMLDivElement>(null);
-  const mobilePage02RunwayRef = useRef<HTMLDivElement>(null);
 
   // Visual Scene Layer Refs
   const page01SceneRef = useRef<HTMLDivElement>(null);
   const videoWrapperRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
-  const page02SceneRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
   // Scroll Progress Tracking
   const [transitionProgress, setTransitionProgress] = useState(0); // 0.0 to 1.0 (Page 1 -> Page 2 shader transition)
-  const [page02Progress, setPage02Progress] = useState(0); // 0.0 to 1.0 (Desktop Page 2 internal progress)
-  const [mobilePage02Progress, setMobilePage02Progress] = useState(0); // 0.0 to 1.0 (Mobile Page 2 vertical cinematic scrollytelling)
-  const isLegacyPage02 = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('legacy') === '1';
-  const isEditorialPage02 = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v') === 'editorial';
+
 
   // Persistent native video audio toggle controller (Unchanged from approved Page 01)
   const handleToggleSound = useCallback(() => {
@@ -241,55 +230,6 @@ export const App: React.FC = () => {
         );
       }
 
-      // ========================================================
-      // TIMELINE 3 & 4: RESPONSIVE GSAP MATCHMEDIA
-      // Handles Desktop (>= 768px) and Mobile (< 768px) cleanly
-      // ========================================================
-      const mm = gsap.matchMedia();
-
-      // DESKTOP & TABLET (>= 768px): Original 240-frame sequence + 10 constellation cards
-      mm.add('(min-width: 768px)', () => {
-        if (!page02RunwayRef.current) return;
-        const page02Timeline = gsap.timeline({
-          scrollTrigger: {
-            trigger: page02RunwayRef.current,
-            start: 'top top',
-            end: 'bottom bottom',
-            scrub: 0.5,
-            onUpdate: (self) => {
-              const p = Math.min(Math.max(self.progress, 0), 1);
-              setPage02Progress(p);
-            },
-            onToggle: (self) => {
-              if (self.progress >= 0.99) setPage02Progress(1.0);
-            },
-          },
-        });
-
-        page02Timeline.to({}, { duration: 1.0 }, 0);
-      });
-
-      // MOBILE (< 768px): Single continuous vertical cinematic scrollytelling
-      mm.add('(max-width: 767px)', () => {
-        if (!mobilePage02RunwayRef.current) return;
-        const mobilePage02Timeline = gsap.timeline({
-          scrollTrigger: {
-            trigger: mobilePage02RunwayRef.current,
-            start: 'top top',
-            end: 'bottom bottom',
-            scrub: 0.4,
-            onUpdate: (self) => {
-              const p = Math.min(Math.max(self.progress, 0), 1);
-              setMobilePage02Progress(p);
-            },
-            onToggle: (self) => {
-              if (self.progress >= 0.99) setMobilePage02Progress(1.0);
-            },
-          },
-        });
-
-        mobilePage02Timeline.to({}, { duration: 1.0 }, 0);
-      });
     });
 
     return () => {
@@ -307,42 +247,8 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleExploreWork = () => {
-    if (window.innerWidth < 768 && mobilePage02RunwayRef.current) {
-      // Scroll to Chapter 06 (The Work I Choose to Show) on mobile vertical constellation (~0.65 progress)
-      if (lenisRef.current) {
-        const targetY =
-          mobilePage02RunwayRef.current.offsetTop +
-          mobilePage02RunwayRef.current.offsetHeight * 0.65;
-        lenisRef.current.scrollTo(targetY, { duration: 2.0 });
-      } else {
-        mobilePage02RunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-      return;
-    }
-
-    if (lenisRef.current && page02RunwayRef.current) {
-      // Scroll smoothly to Page 02 where Chapter 06 (The Work I Choose to Show) is anchored
-      const targetY = page02RunwayRef.current.offsetTop + page02RunwayRef.current.offsetHeight * 0.55;
-      lenisRef.current.scrollTo(targetY, { duration: 2.0 });
-    } else {
-      page02RunwayRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleExploreSystems = () => {
-    if (window.innerWidth >= 768 && page02RunwayRef.current) {
-      const targetY =
-        page02RunwayRef.current.offsetTop +
-        page02RunwayRef.current.offsetHeight -
-        window.innerHeight;
-      if (lenisRef.current) {
-        lenisRef.current.scrollTo(targetY, { duration: 2.0 });
-      } else {
-        window.scrollTo({ top: targetY, behavior: 'smooth' });
-      }
-    }
-  };
+  const handleExploreWork = handleStartJourney;
+  const handleExploreSystems = handleStartJourney;
 
   return (
     <div className="relative min-h-screen bg-[#181210] text-[#FAF7F2] overflow-x-hidden">
@@ -360,78 +266,6 @@ export const App: React.FC = () => {
           videoRef={videoElementRef}
           isActive={transitionProgress < 0.98 && !isContactOpen}
         />
-      </div>
-
-      {/* ========================================================
-          PAGE 01 -> PAGE 02 REAL WEBGL SCENE TRANSITION
-          Noise displacement, chromatic tear, and luminous coral glow
-          ======================================================== */}
-      <SceneTransitionCanvas
-        progress={transitionProgress}
-        videoRef={videoElementRef}
-        className="z-10"
-      />
-
-      {/* ========================================================
-          PAGE 02 VISUAL LAYER: THE LIVING TRACE (DESKTOP & TABLET >= 768px)
-          Authentic human opening -> camera push into subsurface systems investigation
-          ======================================================== */}
-      <div
-        ref={page02SceneRef}
-        id="page-02-scene"
-        className="fixed inset-0 z-20 will-change-transform hidden md:block"
-        style={{
-          opacity: transitionProgress > 0 ? Math.min(transitionProgress * 1.25, 1) : 0,
-          pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
-        }}
-      >
-        {isLegacyPage02 ? (
-          <Page02Scene progress={page02Progress} />
-        ) : isEditorialPage02 ? (
-          <Page02EditorialScene
-            progress={page02Progress}
-            isVisible={transitionProgress >= 0.8}
-          />
-        ) : (
-          <Page02LivingTrace
-            progress={page02Progress}
-            isVisible={transitionProgress >= 0.8}
-            onExploreWork={handleExploreWork}
-            onStartJourney={handleStartJourney}
-            onOpenContact={() => setIsContactOpen(true)}
-          />
-        )}
-      </div>
-
-      {/* ========================================================
-          PAGE 02 VISUAL LAYER: THE LIVING TRACE (MOBILE < 768px)
-          Single continuous vertical world: opening portrait -> vertical trace plunge -> subsurface investigation
-          Strictly NO horizontal panning, NO plain list, NO carousels.
-          ======================================================== */}
-      <div
-        id="page-02-mobile-scene"
-        className="fixed inset-0 z-20 will-change-transform block md:hidden"
-        style={{
-          opacity: transitionProgress > 0 ? Math.min(transitionProgress * 1.25, 1) : 0,
-          pointerEvents: transitionProgress >= 0.8 ? 'auto' : 'none',
-        }}
-      >
-        {isLegacyPage02 || isEditorialPage02 ? (
-          <Page02MobileVertical
-            progress={mobilePage02Progress}
-            onExploreWork={handleExploreWork}
-            onStartJourney={handleStartJourney}
-            onOpenContact={() => setIsContactOpen(true)}
-          />
-        ) : (
-          <Page02LivingTrace
-            progress={mobilePage02Progress}
-            isVisible={transitionProgress >= 0.8}
-            onExploreWork={handleExploreWork}
-            onStartJourney={handleStartJourney}
-            onOpenContact={() => setIsContactOpen(true)}
-          />
-        )}
       </div>
 
       {/* ========================================================
@@ -499,22 +333,6 @@ export const App: React.FC = () => {
         ref={transitionRunwayRef}
         id="page-01-to-02-transition-runway"
         className="relative w-full h-[160vh] pointer-events-none"
-        aria-hidden="true"
-      />
-
-      {/* Runway 3: Page 02 Living Signal (240-frame sequence & 10 cards - Desktop only >= 768px) */}
-      <div
-        ref={page02RunwayRef}
-        id="page-02-runway"
-        className="relative w-full h-[380vh] pointer-events-none hidden md:block"
-        aria-hidden="true"
-      />
-
-      {/* Runway 4: Page 02 Mobile Constellation Exploration Runway (Mobile only < 768px) */}
-      <div
-        ref={mobilePage02RunwayRef}
-        id="page-02-mobile-runway"
-        className="relative w-full h-[480vh] pointer-events-none block md:hidden"
         aria-hidden="true"
       />
 
