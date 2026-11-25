@@ -20,10 +20,22 @@ Mobile uses native touch scrolling with the same narrative and separately compos
 
 Block out the original terrain and fort with simple authored geometry before commissioning or authoring modular sandstone architecture, road, landscape and water assets. Use legally licensed or original materials, record provenance, and preserve source files. Prototype door pivots and camera clearances before detailed modeling. No asset generation is authorized in Phase 00.
 
-## Phase 01 — proposed scope, awaiting approval
+## Temporary navigation
 
-Create a real-time terrain and overview map prototype with ten labeled placeholder destinations and a coherent route. Establish separate mobile and laptop framing, basic lighting, loading and WebGL fallback, and measure frame time, memory and download size. No camera travel engine, animated door, interior storytelling or chapter implementation. Deliver screenshots, device measurements and source asset inventory for review before Phase 02.
+While Page 02 is absent, Work, Systems and Journey point to the existing transition runway. Contact continues to open the contact modal. The Page 01-to-02 WebGL transition source and assets are retained but detached; the existing Page 01 scroll exit continues and the destination is currently empty.
 
-## Phase sequence
+## Phase roadmap
 
-01 terrain and map; 02 camera and scroll engine; 03 fort exterior and entrance; 04 Chapter 01 interior; 05 Chapter 02; 06 remaining chapters individually; 07 optimization and integration. Each requires explicit approval.
+Every phase requires explicit owner approval before proceeding to the next.
+
+- Phase 00: Repository cleanup and verification.
+- Phase 01A: World art direction and visual composition, established separately by the owner and ChatGPT.
+- Phase 01B: Three.js terrain foundation.
+- Phase 01C: Ten-destination world map composition.
+- Phase 01D: Environmental detailing and lighting.
+- Phase 02: Scroll-controlled camera engine.
+- Phase 03: Chapter 01 fort exterior and animated entrance.
+- Phase 04: Chapter 01 interior storytelling.
+- Phase 05: Chapter 02.
+- Phase 06: Remaining chapters individually.
+- Phase 07: Final optimization and integration.
