@@ -270,16 +270,17 @@ export const Page02LivingTrace: React.FC<Page02LivingTraceProps> = ({
         />
 
         {/* Dynamic Chapter 02 Warm Dusk Ambient Gradient */}
-        <div
+        {false && <div
           className="absolute inset-0 pointer-events-none transition-opacity duration-700"
           style={{
             opacity: Math.min(progress * 1.4, 0.75),
             background:
               'radial-gradient(circle at 60% 40%, rgba(224, 109, 83, 0.18) 0%, rgba(58, 42, 56, 0.22) 65%, rgba(26, 20, 18, 0.35) 100%)',
           }}
-        />
+        />}
       </div>
 
+      {false && <>
       {/* ========================================================
           LAYER 1: THREE.JS SPATIAL CAMERA & PARTICLE DEPTH (Laptop Only)
           ======================================================== */}
@@ -599,6 +600,7 @@ export const Page02LivingTrace: React.FC<Page02LivingTraceProps> = ({
           </div>
         </div>
       </div>
+      </>}
     </div>
   );
 };
