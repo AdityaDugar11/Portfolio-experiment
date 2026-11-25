@@ -33,29 +33,4 @@ This repository is documentation-first. The project source of truth is governed 
 
 ---
 
-## Owner Details
 
-- **Name:** Aditya Dugar
-- **Role:** Software Engineering Student, Jain University
-- **Email:** [adityadugar7@gmail.com](mailto:adityadugar7@gmail.com)
-- **LinkedIn:** [https://www.linkedin.com/in/adityadugar11/](https://www.linkedin.com/in/adityadugar11/)
-- **GitHub:** [https://github.com/AdityaDugar11](https://github.com/AdityaDugar11)
-- **Project Repository:** [https://github.com/AdityaDugar11/Portfolio-experiment](https://github.com/AdityaDugar11/Portfolio-experiment)
-
----
-
-## Project Status
-
-- [x] Master Creative Brief integrated (`docs/MASTER_CREATIVE_BRIEF.md`)
-- [x] Master Act 01 Storyboard committed (`docs/reference/act-01-master-storyboard.png`)
-- [x] Ten-chapter narrative reconciled (`docs/STORY_CONTENT.md`)
-- [x] Project documentation reconciled across all files
-- [x] Original portrait verified on disk
-- [ ] Milestone 1: Act 01 Scaffold & Scenic Environment
-- [ ] Milestone 2: Act 01 Orbital System & Luminous Nodes
-- [ ] Milestone 3: Act 01 Polish, Modal & Cursor
-- [ ] Milestone 4: Act 01 Formal Owner Review & Approval Gate
-- [ ] Sequence 02: Chapters 02–05
-- [ ] Sequence 03: Chapters 06–07 (Live GitHub GraphQL Gallery & GrooveIt)
-- [ ] Sequence 04: Chapters 08–10 (Experimental Lab, Horizons & Closing)
-- [ ] Audio Selection & Launch
