@@ -2,11 +2,15 @@
 
 These instructions apply to every coding agent and every conversation working in this repository. Read this file, `README.md`, and all files under `docs/` before making changes.
 
+## Permanent zero-cost policy
+
+The total development and asset acquisition budget is ₹0. Do not use paid models, textures, packs, Blender add-ons, APIs, services, AI credits, subscriptions, payment-dependent trials or Higgsfield. Gemini Veo is optional only when available without payment. Use original, open-source, public-domain or appropriately licensed free assets permitting public portfolio deployment; verify individual licenses and record provenance and required attribution. Free download alone does not grant reuse rights. This policy applies to all phases.
+
 ## 1. Source of Truth & Governance Hierarchy
 
 When resolving requirements or priorities, strictly follow this hierarchy:
 1. **Latest explicit directives from the owner.**
-2. [`docs/PAGE_02_CREATIVE_DIRECTION.md`](docs/PAGE_02_CREATIVE_DIRECTION.md) — Authoritative creative specification for Page 02 ("Every Idea Leaves a Trace — The Living Trace"), governing all scene compositions, trace evolutions, responsive adaptations, and interaction choreography for Page 02.
+2. [`docs/PAGE_02_WORLD_SPEC.md`](docs/PAGE_02_WORLD_SPEC.md) — Current Page 02 direction; earlier Page 02 visual specifications are historical.
 3. [`docs/MASTER_CREATIVE_BRIEF.md`](docs/MASTER_CREATIVE_BRIEF.md) — Overarching vision, complete ten-chapter narrative, four cinematic sequences, aesthetic philosophy, and technical architecture for the entire portfolio.
 4. [`docs/reference/act-01-master-storyboard.png`](docs/reference/act-01-master-storyboard.png) — Authoritative visual reference for Act 01 composition, sunset-lakeside environment, architectural framing, realistic human portrait, floating holographic tech elements, and 5-stage scroll choreography.
 5. [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md) and [`docs/ACT_01_SPEC.md`](docs/ACT_01_SPEC.md) — Detailed design specifications, interaction tokens, and stage-by-stage implementation specifications for Act 01.
