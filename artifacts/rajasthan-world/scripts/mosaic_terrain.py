@@ -12,6 +12,8 @@ for lat in range(s,n):
   key=f'Copernicus_DSM_COG_30_N{lat:02d}_00_E{lon:03d}_00_DEM.tif';path=cache/key
   with Image.open(path) as im:
    origin=im.tag_v2.get(33922);scale=im.tag_v2.get(33550);keys=im.tag_v2.get(34735,());nodata=im.tag_v2.get(42113)
+   geokeys={keys[i]:(keys[i+1],keys[i+2],keys[i+3]) for i in range(4,len(keys),4)}; raster_type=geokeys.get(1025,(None,None,None))[2]
+   if raster_type != 2: raise ValueError(f'Expected PixelIsPoint GeoTIFF, found {raster_type}: {path}')
    if not origin or not scale or 4326 not in keys or abs(origin[3]-lon)>1e-8 or abs(origin[4]-(lat+1))>1e-8:raise ValueError(f'Invalid spatial metadata {path}')
    arr=np.asarray(im,dtype=np.float32).copy();arr[~np.isfinite(arr)]=np.nan
    if nodata is not None:arr[arr==float(str(nodata).strip('\x00'))]=np.nan
@@ -27,5 +29,5 @@ ys=np.linspace(0,mosaic.shape[0]-1,ny);xs=np.linspace(0,mosaic.shape[1]-1,nx);x0
 for i,y in enumerate(ys):
  y0=int(y);y1=min(y0+1,mosaic.shape[0]-1);fy=y-y0;row=mosaic[y0]*(1-fy)+mosaic[y1]*fy;out[i]=row[x0]*(1-fx)+row[x1]*fx
 # Pixel-center coordinates; x/y projection computed in Blender using local equirectangular.
-meta={'bbox':[w,s,e,n],'source_shape':list(mosaic.shape),'shape':[ny,nx],'pixel_scale_degrees':list(steps),'projection':'local equirectangular, sphere R=6371000 m, latitude of origin = bbox midpoint','min_m':float(np.min(out)),'max_m':float(np.max(out)),'nodata':'rejected','vertical_exaggeration':1,'tiles':len(tiles)}
+meta={'bbox':[w,s,e,n],'source_shape':list(mosaic.shape),'shape':[ny,nx],'source_raster_type':'PixelIsPoint','source_pixel_scale_degrees':list(steps),'grid_transform':{'origin_center_lon':w,'origin_center_lat':n,'step_lon':(mosaic.shape[1]-1)*steps[0]/(nx-1),'step_lat':-(mosaic.shape[0]-1)*steps[1]/(ny-1)},'projection':'local equirectangular, sphere R=6371000 m, latitude of origin = bbox midpoint','min_m':float(np.min(out)),'max_m':float(np.max(out)),'nodata':'rejected','vertical_exaggeration':1,'tiles':len(tiles)}
 np.savez_compressed(a.output,elevation=out,metadata=json.dumps(meta));print(json.dumps(meta,indent=2))

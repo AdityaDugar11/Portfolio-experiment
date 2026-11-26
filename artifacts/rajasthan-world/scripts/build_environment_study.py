@@ -1,0 +1,19 @@
+import bpy, math, os, json, time
+import numpy as np
+from mathutils import Vector
+root=os.path.abspath(os.path.join(os.path.dirname(__file__),'..')); dat=np.load(os.path.join(root,'data','aravalli-study.npz')); z=dat['elevation']; m=json.loads(str(dat['metadata'])); t=m['grid_transform']; ny,nx=z.shape;w,s,e,n=m['bbox'];midlon=(w+e)/2;midlat=(s+n)/2;R=6371000.;mx=R*math.cos(math.radians(midlat))*math.pi/180;my=R*math.pi/180
+xs=t['origin_center_lon']+np.arange(nx)*t['step_lon'];ys=t['origin_center_lat']+np.arange(ny)*t['step_lat']
+bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+def col(name):
+ c=bpy.data.collections.new(name);bpy.context.scene.collection.children.link(c);return c
+terrain=col('WORLD_TERRAIN');cams=col('CAMERAS');lights=col('LIGHTING')
+verts=[((x-midlon)*mx,(y-midlat)*my,float(z[i,j])) for i,y in enumerate(ys) for j,x in enumerate(xs)];faces=[(i*nx+j,(i+1)*nx+j,(i+1)*nx+j+1,i*nx+j+1) for i in range(ny-1) for j in range(nx-1)];mesh=bpy.data.meshes.new('Elevation_Aravalli');mesh.from_pydata(verts,[],faces);mesh.update();ob=bpy.data.objects.new('Aravalli_Copernicus_true_scale',mesh);terrain.objects.link(ob)
+for f in mesh.polygons:f.use_smooth=True
+mat=bpy.data.materials.new('Earth_and_rock_procedural');mat.use_nodes=True;nodes=mat.node_tree.nodes;links=mat.node_tree.links;bs=nodes.get('Principled BSDF');bs.inputs['Roughness'].default_value=.9
+tex=nodes.new('ShaderNodeTexNoise');tex.inputs['Scale'].default_value=18;tex.inputs['Detail'].default_value=5;tex.inputs['Roughness'].default_value=.7
+coord=nodes.new('ShaderNodeTexCoord');links.new(coord.outputs['Generated'],tex.inputs['Vector']);ramp=nodes.new('ShaderNodeValToRGB');ramp.color_ramp.elements[0].position=.25;ramp.color_ramp.elements[0].color=(.14,.10,.075,1);ramp.color_ramp.elements[1].position=.75;ramp.color_ramp.elements[1].color=(.52,.36,.23,1);links.new(tex.outputs['Fac'],ramp.inputs[0]);links.new(ramp.outputs['Color'],bs.inputs['Base Color']);bump=nodes.new('ShaderNodeBump');bump.inputs['Strength'].default_value=.22;bump.inputs['Distance'].default_value=20;links.new(tex.outputs['Fac'],bump.inputs['Height']);links.new(bump.outputs['Normal'],bs.inputs['Normal']);ob.data.materials.append(mat)
+world=bpy.data.worlds.new('Warm sky');world.use_nodes=True;bpy.context.scene.world=world;world.node_tree.nodes.get('Background').inputs['Color'].default_value=(.24,.32,.46,1);world.node_tree.nodes.get('Background').inputs['Strength'].default_value=.45
+sd=bpy.data.lights.new('Golden sun','SUN');sd.energy=2;sd.color=(1,.72,.50);sun=bpy.data.objects.new('Golden sun',sd);lights.objects.link(sun);sun.rotation_euler=(math.radians(40),math.radians(-45),math.radians(-30))
+# Target a measured high-relief cell, preserving vertical scale.
+i,j=np.unravel_index(np.argmax(z[50:-50,50:-50]),z[50:-50,50:-50].shape);i+=50;j+=50;target=Vector(((xs[j]-midlon)*mx,(ys[i]-midlat)*my,float(z[i,j])));camd=bpy.data.cameras.new('Aravalli aerial');cam=bpy.data.objects.new('Aravalli aerial',camd);cams.objects.link(cam);cam.location=target+Vector((-4500,-6500,1700));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();camd.lens=45;camd.clip_end=500000
+scene=bpy.context.scene;scene.camera=cam;scene.render.engine='CYCLES';scene.cycles.samples=16;scene.cycles.device='CPU';scene.render.resolution_x=960;scene.render.resolution_y=600;scene.render.resolution_percentage=100;scene.render.filepath=os.path.join(root,'renders','environment-study','aravalli-draft.png');scene['source_metadata']=json.dumps(m);os.makedirs(os.path.dirname(scene.render.filepath),exist_ok=True);bpy.ops.wm.save_as_mainfile(filepath=os.path.join(root,'blender','rajasthan-environment-study.blend'));now=time.time();bpy.ops.render.render(write_still=True);print('RENDER_SECONDS',round(time.time()-now,2),'MESH',len(verts),len(faces))
