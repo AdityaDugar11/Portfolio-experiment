@@ -23,3 +23,6 @@ lerna-debug.log*
 # OS metadata
 .DS_Store
 Thumbs.db
+
+__pycache__/
+*.pyc
