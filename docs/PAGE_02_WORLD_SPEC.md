@@ -1,6 +1,6 @@
 # Page 02 — Cinematically Connected Rajasthan
 
-Status: Phase 01A accepted; Phase 01B visual planning for owner review. The approved creative direction is Option B with Option A's architectural authenticity. The ten chapter texts in [STORY_CONTENT.md](STORY_CONTENT.md) remain canonical. Every later phase requires explicit owner approval. Forts 02–10, placement and chapter associations below are proposals, not approved selections.
+Status: Phase 01A accepted; previous Phase 01B abstract diagrams rejected. Phase 01B.1 geographical foundation is in progress. Blender is the master world-building environment, based on real geographical data; Three.js is the eventual interactive delivery environment. The ₹0 policy remains in force. The approved creative direction is Option B with Option A's architectural authenticity. The ten chapter texts in [STORY_CONTENT.md](STORY_CONTENT.md) remain canonical. Every later phase requires explicit owner approval. Forts 02–10, placement and chapter associations below are proposals, not approved selections.
 
 ## Art direction and journey
 
@@ -118,3 +118,13 @@ Potential free sources: [Poly Haven license](https://polyhaven.com/license) and 
 Rough, unvalidated single-experienced-artist estimate: Junagarh reference research and permissions 3–7 working days; authentic modular hero exterior and door 15–35 days; first interior 10–25 days; environment and streaming/camera integration 15–35 days; each additional fort 15–40 days depending on access to references and required interior scope. Estimates overlap poorly and exclude unavailable rights, physical-device testing and review delays; no staffing, geometry, accuracy or performance has been measured. Ten authentic detailed forts are a substantial long-term effort and may need phased delivery.
 
 Owner review is needed for the nine remaining fort associations, route/scale, layout and camera framing, gate/exit selection and realism target. A reliable free Junagarh model, licensed multi-angle reference, measurements, vegetation candidates and Blender availability remain blockers or open checks for later modeling. No production world or architectural asset is created in Phase 01B.
+
+
+## Revised Phase 01B sequence
+
+- **01B.1 — Geographical foundation:** verified elevation and spatial reference, fort locations, editable master terrain and validation renders.
+- **01B.2 — Environmental realism and cinematic lighting:** only after approval of 01B.1.
+- **01B.3 — Junagarh architectural reconstruction:** after approval of 01B.2 and reference verification.
+- **01B.4 — Camera journey and entrance choreography:** after approval of 01B.3.
+
+The former Phase 01B illustrations are rejected and retained only as historical work; they are not a design target. All gates require explicit owner approval.
