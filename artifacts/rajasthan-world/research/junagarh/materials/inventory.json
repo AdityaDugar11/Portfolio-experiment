@@ -1,0 +1,157 @@
+[
+  {
+    "id": "red_sandstone_wall",
+    "author": {
+      "Amal Kumar": "All"
+    },
+    "source": "https://polyhaven.com/a/red_sandstone_wall",
+    "license": "CC0 1.0",
+    "license_url": "https://polyhaven.com/license",
+    "commercial": "yes",
+    "attribution": "not required; appreciated",
+    "maps": [
+      {
+        "channel": "Diffuse",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/red_sandstone_wall/Diffuse.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/red_sandstone_wall/red_sandstone_wall_diff_1k.jpg",
+        "md5": "8639968c2ce8b0b2e54cc6ca0c19cd76"
+      },
+      {
+        "channel": "Rough",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/red_sandstone_wall/Rough.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/red_sandstone_wall/red_sandstone_wall_rough_1k.jpg",
+        "md5": "790833c643017903ba371e9d758b0f0d"
+      },
+      {
+        "channel": "nor_gl",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/red_sandstone_wall/nor_gl.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/red_sandstone_wall/red_sandstone_wall_nor_gl_1k.jpg",
+        "md5": "0d2511d4d8ac1d48f417f7fc6345ffb6"
+      }
+    ]
+  },
+  {
+    "id": "old_sandstone_02",
+    "author": {
+      "Dimitrios Savva": "All"
+    },
+    "source": "https://polyhaven.com/a/old_sandstone_02",
+    "license": "CC0 1.0",
+    "license_url": "https://polyhaven.com/license",
+    "commercial": "yes",
+    "attribution": "not required; appreciated",
+    "maps": [
+      {
+        "channel": "nor_gl",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/old_sandstone_02/nor_gl.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/old_sandstone_02/old_sandstone_02_nor_gl_1k.jpg",
+        "md5": "896ccd3108b5376f3ffa9f141e2086fb"
+      },
+      {
+        "channel": "Rough",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/old_sandstone_02/Rough.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/old_sandstone_02/old_sandstone_02_rough_1k.jpg",
+        "md5": "4c01a032f589b5dbe1156bb1968f35ef"
+      },
+      {
+        "channel": "Diffuse",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/old_sandstone_02/Diffuse.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/old_sandstone_02/old_sandstone_02_diff_1k.jpg",
+        "md5": "45235f7669057df7cdbb24cac89beede"
+      }
+    ]
+  },
+  {
+    "id": "fine_grained_wood",
+    "author": {
+      "Rob Tuytel": "All"
+    },
+    "source": "https://polyhaven.com/a/fine_grained_wood",
+    "license": "CC0 1.0",
+    "license_url": "https://polyhaven.com/license",
+    "commercial": "yes",
+    "attribution": "not required; appreciated",
+    "maps": [
+      {
+        "channel": "Diffuse",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/fine_grained_wood/Diffuse.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_col_1k.jpg",
+        "md5": "3db9decdde678e087e67ff99d30c0a73"
+      },
+      {
+        "channel": "nor_gl",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/fine_grained_wood/nor_gl.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_nor_gl_1k.jpg",
+        "md5": "a9e33e87ea5c32945fc30553767b7046"
+      },
+      {
+        "channel": "Rough",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/fine_grained_wood/Rough.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_rough_1k.jpg",
+        "md5": "5e29204cca6747b5df219e9a7255540f"
+      }
+    ]
+  },
+  {
+    "id": "rusty_metal",
+    "author": {
+      "Rob Tuytel": "All"
+    },
+    "source": "https://polyhaven.com/a/rusty_metal",
+    "license": "CC0 1.0",
+    "license_url": "https://polyhaven.com/license",
+    "commercial": "yes",
+    "attribution": "not required; appreciated",
+    "maps": [
+      {
+        "channel": "nor_gl",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/rusty_metal/nor_gl.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rusty_metal/rusty_metal_nor_gl_1k.jpg",
+        "md5": "6133cf0df6fd63d0c484ca1669f90935"
+      },
+      {
+        "channel": "Diffuse",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/rusty_metal/Diffuse.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rusty_metal/rusty_metal_diff_1k.jpg",
+        "md5": "ba829f953270d3ad87d8e86d840f71d6"
+      },
+      {
+        "channel": "Rough",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/rusty_metal/Rough.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rusty_metal/rusty_metal_rough_1k.jpg",
+        "md5": "ec93adbfb6e4d8562a0272be937719dc"
+      }
+    ]
+  },
+  {
+    "id": "dry_ground_01",
+    "author": {
+      "Rob Tuytel": "All"
+    },
+    "source": "https://polyhaven.com/a/dry_ground_01",
+    "license": "CC0 1.0",
+    "license_url": "https://polyhaven.com/license",
+    "commercial": "yes",
+    "attribution": "not required; appreciated",
+    "maps": [
+      {
+        "channel": "nor_gl",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/dry_ground_01/nor_gl.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dry_ground_01/dry_ground_01_nor_gl_1k.jpg",
+        "md5": "6088d590e646993784228156696e9948"
+      },
+      {
+        "channel": "Rough",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/dry_ground_01/Rough.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dry_ground_01/dry_ground_01_rough_1k.jpg",
+        "md5": "63b583296c606971ce605e5b160a21bc"
+      },
+      {
+        "channel": "Diffuse",
+        "path": "artifacts/rajasthan-world/research/junagarh/materials/dry_ground_01/Diffuse.jpg",
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/dry_ground_01/dry_ground_01_diff_1k.jpg",
+        "md5": "f928726e24cf06765877ae77b9a04b4a"
+      }
+    ]
+  }
+]
