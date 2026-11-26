@@ -30,3 +30,7 @@ First obtain an authorized multi-angle capture or sufficiently documented open r
 ## Open issues
 
 No measured gateway elevation, full door-side or rear passage, usable verified fort scan, complete building naming, approved deployment attribution workflow, or validated capture permission. The OSM geometry and reference photo licenses permit public and commercial use subject to their conditions; they do not themselves establish monument accuracy or photographic capture permissions. Blender color management in the installed Flatpak remains unresolved from prior work.
+
+## Owner-approved primary exterior reference
+
+The India Cine Hub photograph is the **primary exterior reference** for the Chapter 01 exterior; Meshy remains a secondary appearance benchmark. See [primary exterior analysis](PRIMARY_EXTERIOR_ANALYSIS.md) for the source, image observations, comparison to the eight Commons references and OSM footprints, modeling plan and unresolved gate identity. The 800 × 500 file served by the supplied styled URL and the annotated derivative are locally stored and Git-ignored: the website's copyright policy requires permission for reproduction and the photo's rights holder remains unverified. Neither image is cleared for redistribution or deployment.

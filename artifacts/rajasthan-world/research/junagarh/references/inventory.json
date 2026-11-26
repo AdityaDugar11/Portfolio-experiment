@@ -1,5 +1,20 @@
 [
   {
+    "title": "PRIMARY EXTERIOR REFERENCE — Junagarh Fort, Bikaner",
+    "role": "owner-approved primary exterior visual benchmark; Meshy remains secondary visual quality benchmark",
+    "source_page": "https://www.indiacinehub.gov.in/location/states-union-territories/rajasthan",
+    "download_url": "https://indiacinehub.gov.in/sites/default/files/styles/flexslider_full/public/2024-01/junagarh_fort_bikaner1.jpg?itok=83Sp1Y8L",
+    "author": "unknown",
+    "copyright": "unknown; reproduction requires appropriate permission under site policy; third-party rights unresolved",
+    "license_url": "https://indiacinehub.gov.in/index.php/privacy-policy",
+    "commercial": "not verified; do not redistribute without permission",
+    "file": "artifacts/rajasthan-world/research/junagarh/references/primary-exterior/india-cine-hub-exterior.jpg",
+    "dimensions": "800 x 500 pixels as served by supplied styled URL; photographer original resolution unverified",
+    "modification": "downloaded bytes unchanged; local annotated derivative separately Git-ignored",
+    "sha256": "9f71f2a7bf31b3df1d075b0aa36c966948dac4fdb3d691c238496f7fba0f9f65",
+    "storage": "local only, git-ignored; no deployment"
+  },
+  {
     "title": "File:Inde Bikaner Junagarh Fort Suraj Pol - panoramio.jpg",
     "description": "Inde Bikaner Junagarh Fort Suraj Pol",
     "author": "rene boulay",

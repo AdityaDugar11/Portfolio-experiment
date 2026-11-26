@@ -128,3 +128,7 @@ Owner review is needed for the nine remaining fort associations, route/scale, la
 - **01B.4 — Camera journey and entrance choreography:** after approval of 01B.3.
 
 The former Phase 01B illustrations are rejected and retained only as historical work; they are not a design target. All gates require explicit owner approval.
+
+## Primary Junagarh exterior benchmark — owner decision
+
+The owner-provided [India Cine Hub Junagarh exterior photograph](https://indiacinehub.gov.in/sites/default/files/styles/flexslider_full/public/2024-01/junagarh_fort_bikaner1.jpg?itok=83Sp1Y8L) is the primary exterior visual benchmark. Actual architecture takes precedence over Meshy, which is a secondary appearance benchmark. Follow the [reference analysis and proposed reconstruction plan](../artifacts/rajasthan-world/research/junagarh/PRIMARY_EXTERIOR_ANALYSIS.md). Photograph redistribution and derivative rights are unverified: its local copy and annotated sheet are Git-ignored and must not be deployed. The visible exterior gate's identity relative to Suraj Pol remains unverified. Future modeling requires explicit owner approval; preserve real geometry, independently animated doors and a navigable passage.
