@@ -1,0 +1,43 @@
+{
+  "boundary_bounds_wgs84": [
+    69.46509281400012,
+    23.036061917423524,
+    78.24652143691475,
+    30.204076838175524
+  ],
+  "boundary_area_lcc_km2": 342515.77,
+  "missing_before_km2_lcc": 410.3,
+  "missing_after_km2": 0,
+  "cached_dem_tiles": 72,
+  "supplementary_tile": "N26E078",
+  "regional_grid": [
+    805,
+    723
+  ],
+  "spacing_km": 1.25,
+  "detail_grid": [
+    511,
+    606
+  ],
+  "detail_index_bounds": [
+    [
+      300,
+      402
+    ],
+    [
+      136,
+      257
+    ]
+  ],
+  "surface_texture_px": [
+    4800,
+    4304
+  ],
+  "surface_crs": "+proj=lcc +lat_1=24 +lat_2=29.5 +lat_0=26.5 +lon_0=74 +datum=WGS84 +units=m +no_defs",
+  "raster_bounds_km": [
+    -500.0,
+    -410.0,
+    505.0,
+    492.5
+  ]
+}

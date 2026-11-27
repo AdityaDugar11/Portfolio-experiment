@@ -1,6 +1,14 @@
-# Page 02 — Cinematically Connected Rajasthan
+# Page 02 — Interactive Rajasthan terrain map
 
-Status: Phase 01A accepted; previous Phase 01B abstract diagrams rejected. Phase 01B.1 geographical foundation is in progress. Blender is the master world-building environment, based on real geographical data; Three.js is the eventual interactive delivery environment. The ₹0 policy remains in force. The approved creative direction is Option B with Option A's architectural authenticity. The ten chapter texts in [STORY_CONTENT.md](STORY_CONTENT.md) remain canonical. Every later phase requires explicit owner approval. Forts 02–10, placement and chapter associations below are proposals, not approved selections.
+## Current owner direction · 27 November 2026
+
+Page 01 exits into a geographically grounded map of Rajasthan. Visitors can follow the chapter sequence by scrolling or select a fort directly. Each destination opens with an exterior and animated gateway, continues into horizontal interior storytelling, then returns to the map. The ten chapter titles and texts come from [STORY_CONTENT.md](STORY_CONTENT.md).
+
+The current checkpoint covers the editable Blender map and five offline compositions. Chapter positions, data attribution, camera treatments and proposed web delivery budgets are recorded in the [terrain map package](../artifacts/rajasthan-world/map-phase-01/README.md). Approval of those compositions comes before production integration. Fort work is paused.
+
+## Historical continuous-world specification
+
+The following material records the earlier route and architectural research. The map journey above supersedes its navigation architecture, compressed distances and phase sequence.
 
 ## Art direction and journey
 

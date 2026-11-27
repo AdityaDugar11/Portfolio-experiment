@@ -1,0 +1,158 @@
+{
+  "crs": "+proj=lcc +lat_1=24 +lat_2=29.5 +lat_0=26.5 +lon_0=74 +datum=WGS84 +units=m +no_defs",
+  "axes": "Blender X east, Y north, Z up. One unit = 1 km. glTF basis [x,z,-y].",
+  "vertical_exaggeration": 3.2,
+  "coordinate_role": "representative site point, not entrance",
+  "chapters": [
+    {
+      "chapter": 1,
+      "fort": "Junagarh Fort",
+      "latitude": 28.02201,
+      "longitude": 73.31772,
+      "source": "https://www.wikidata.org/wiki/Q2758341",
+      "statement": "Q2758341$1DCB9777-EAFC-46B8-8EE6-3733BCD7B97C",
+      "title": "THE BEGINNING",
+      "elevation_dsm_m": 227.59,
+      "blender_xyz_km": [
+        -67.03571,
+        168.64825,
+        0.72828
+      ]
+    },
+    {
+      "chapter": 2,
+      "fort": "Mehrangarh Fort",
+      "latitude": 26.298055555556,
+      "longitude": 73.018888888889,
+      "source": "https://www.wikidata.org/wiki/Q1483099",
+      "statement": "Q1483099$B4B2DD2D-3C32-4417-90D4-7C96D21F17D9",
+      "title": "BEYOND THE INTERFACE",
+      "elevation_dsm_m": 320.82,
+      "blender_xyz_km": [
+        -97.86738,
+        -21.97179,
+        1.02663
+      ]
+    },
+    {
+      "chapter": 3,
+      "fort": "Kumbhalgarh Fort",
+      "latitude": 25.14916667,
+      "longitude": 73.58111111,
+      "source": "https://www.wikidata.org/wiki/Q1246283",
+      "statement": "q1246283$A14C1A12-07B3-490F-B071-04B30D34565E",
+      "title": "THE LEARNING CURVE",
+      "elevation_dsm_m": 1025.62,
+      "blender_xyz_km": [
+        -42.20375,
+        -149.43487,
+        3.28199
+      ]
+    },
+    {
+      "chapter": 4,
+      "fort": "Amber Fort",
+      "latitude": 26.9859,
+      "longitude": 75.8507,
+      "source": "https://www.wikidata.org/wiki/Q456817",
+      "statement": "Q456817$D3CE59BB-0E9C-4B5A-9CD8-F6D4F14C6205",
+      "title": "WHAT DRAWS MY ATTENTION",
+      "elevation_dsm_m": 459.42,
+      "blender_xyz_km": [
+        183.49841,
+        55.11041,
+        1.47014
+      ]
+    },
+    {
+      "chapter": 5,
+      "fort": "Chittorgarh Fort",
+      "latitude": 24.88722222,
+      "longitude": 74.64694444,
+      "source": "https://www.wikidata.org/wiki/Q3695769",
+      "statement": "Q3695769$264BBBCA-077B-4F4F-93C0-8DD8F487A3DB",
+      "title": "HOW I TURN IDEAS INTO SYSTEMS",
+      "elevation_dsm_m": 532.2,
+      "blender_xyz_km": [
+        65.32799,
+        -178.33474,
+        1.70303
+      ]
+    },
+    {
+      "chapter": 6,
+      "fort": "Jaisalmer Fort",
+      "latitude": 26.9127,
+      "longitude": 70.9126,
+      "source": "https://www.wikidata.org/wiki/Q3634368",
+      "statement": "Q3634368$83CD985A-C5F0-4319-9726-6D51431297C6",
+      "title": "THE WORK I CHOOSE TO SHOW",
+      "elevation_dsm_m": 263.85,
+      "blender_xyz_km": [
+        -306.29553,
+        49.39049,
+        0.84431
+      ]
+    },
+    {
+      "chapter": 7,
+      "fort": "Gagron Fort",
+      "latitude": 24.628,
+      "longitude": 76.183,
+      "source": "https://www.wikidata.org/wiki/Q16891508",
+      "statement": "Q16891508$DC6DD1E5-E1DD-4E56-9364-4D7AB062E188",
+      "title": "ENGINEERING WITH OTHERS",
+      "elevation_dsm_m": 311.15,
+      "blender_xyz_km": [
+        220.92024,
+        -205.30409,
+        0.99568
+      ]
+    },
+    {
+      "chapter": 8,
+      "fort": "Ranthambore Fort",
+      "latitude": 26.020378055555554,
+      "longitude": 76.45499694444445,
+      "source": "https://www.wikidata.org/wiki/Q2724894",
+      "statement": "Q2724894$B4E50B9C-1FD6-485E-812D-7A1DFFED97EE",
+      "title": "THE EXPERIMENTAL LAB",
+      "elevation_dsm_m": 455.87,
+      "blender_xyz_km": [
+        245.46989,
+        -50.71154,
+        1.45878
+      ]
+    },
+    {
+      "chapter": 9,
+      "fort": "Taragarh Fort, Bundi",
+      "latitude": 25.450752,
+      "longitude": 75.637379,
+      "source": "https://www.wikidata.org/wiki/Q2739151",
+      "statement": "Q2739151$a7c2426b-4197-dadd-9042-d81a90af492b",
+      "title": "STILL BECOMING",
+      "elevation_dsm_m": 424.06,
+      "blender_xyz_km": [
+        164.53487,
+        -115.06437,
+        1.357
+      ]
+    },
+    {
+      "chapter": 10,
+      "fort": "Nahargarh Fort",
+      "latitude": 26.9375,
+      "longitude": 75.81583333333333,
+      "source": "https://www.wikidata.org/wiki/Q2723401",
+      "statement": "Q2723401$49378495-0CCE-4717-A244-620F63403B6F",
+      "title": "THE NEXT CONNECTION",
+      "elevation_dsm_m": 559.37,
+      "blender_xyz_km": [
+        180.11803,
+        49.7044,
+        1.78998
+      ]
+    }
+  ]
+}
