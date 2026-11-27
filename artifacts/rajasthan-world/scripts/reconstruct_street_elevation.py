@@ -8,7 +8,7 @@ import json
 import math
 import os
 import random
-from collections import Counter
+
 from math import sin, cos, pi, sqrt
 
 import bpy
@@ -166,9 +166,9 @@ def stone_material(name,low,high,asset=None,repeat=1,metal=0,rough=.8):
     return material
 
 
-red=stone_material('Rampart • weathered red lime and sandstone',(.23,.087,.055),(.55,.245,.145),'old_sandstone_02',.29)
+red=stone_material('Rampart • weathered red lime and sandstone',(.31,.135,.091),(.66,.352,.235),'old_sandstone_02',.29)
 rose=stone_material('Rose sandstone • dressed mouldings',(.24,.102,.071),(.59,.319,.209),'red_sandstone_wall',.42)
-umber=stone_material('Palace • deep red stone',(.15,.060,.040),(.405,.196,.127),'old_sandstone_02',.40)
+umber=stone_material('Palace • deep red stone',(.236,.116,.078),(.57,.317,.222),'old_sandstone_02',.40)
 cream=stone_material('Portal • buff sandstone',(.34,.243,.161),(.76,.598,.409),'old_sandstone_02',.46)
 carved=stone_material('Pale carved sandstone • fresh edges',(.43,.317,.211),(.84,.688,.489),'old_sandstone_02',.70)
 lime=stone_material('Street enclosure • lime edging',(.47,.38,.29),(.80,.70,.54))
@@ -176,7 +176,7 @@ wood=stone_material('Oiled timber • leaf and shutter',(.037,.018,.009),(.17,.0
 iron=stone_material('Blackened wrought iron',(.028,.024,.021),(.105,.080,.054),metal=.68,rough=.56)
 shade=stone_material('Recessed stone • sheltered surface',(.083,.037,.023),(.21,.111,.072))
 grit=stone_material('Paving • dusty slabs',(.23,.179,.141),(.50,.403,.302),'dry_ground_01',.32)
-road=stone_material('Street asphalt • warm aggregate',(.085,.084,.088),(.205,.198,.188))
+road=stone_material('Street asphalt • warm aggregate',(.135,.130,.126),(.164,.157,.152))
 flagmat=stone_material('Saffron cloth',(.58,.115,.021),(.88,.395,.038))
 
 # Pinhole match in the source 800 × 500 frame. The horizontal vanishing point
@@ -323,9 +323,14 @@ for j,(z,d,h) in enumerate([(8.8,.20,.11),(9.06,.31,.15),(10.86,.2,.12),(11.14,.
 
 # Continuous vaulted reveal and inner gate throat.
 inner=Carving()
-arch_shell(inner,0,2.49,4.17,3.00,1.32,10.8,5.0,8.3,.40)
+for a,b in [(1.32,5.75),(8.85,10.8)]:
+    arch_shell(inner,0,2.49,4.17,3.00,a,b,5.0,8.3,.40)
+# An internal square-headed rebate gives each arched leaf room to rotate.
+for a,b in [(-5,-2.66),(2.66,5)]:
+    inner.box(a,b,5.75,8.85,.40,8.3)
+inner.box(-2.66,2.66,5.75,8.85,7.48,8.30)
 inner.emit('Passage | full sidewalls and pointed barrel soffit',passage,shade,.038)
-for y in [1.42,4.3,7.45,10.6]:
+for y in [1.42,4.3,9.05,10.6]:
     rib=Carving()
     band(rib,0,2.37,4.17,2.93,.18,y,y+.27,.4,12)
     rib.emit('Passage | masonry transverse rib',passage,cream,.015)
@@ -391,13 +396,13 @@ def rampart(name, route, base_top, crown=.98):
         t=(s-lengths[i])/(lengths[i+1]-lengths[i])
         return pts[i].lerp(pts[i+1],t),normals[i].lerp(normals[i+1],t).normalized(),tops[i]*(1-t)+tops[i+1]*t
     merlons=Carving()
-    count=max(1,round(lengths[-1]/1.32))
+    count=max(1,round(lengths[-1]/1.49))
     pitch=lengths[-1]/count
     # Solid, arched shoulders with a tapered top and a through slit. Each is
     # one stone-thick in depth; the narrow gaps cut the parapet silhouette.
     for j in range(count):
         section=[]
-        for frac,height in [(0,.69),(.12,.81),(.27,.90),(.40,.94),(.50,1),(.60,.94),(.73,.90),(.88,.81),(1,.69)]:
+        for frac,height in [(0,.69),(.12,.81),(.27,.90),(.40,.97),(.50,1),(.60,.97),(.73,.90),(.88,.81),(1,.69)]:
             s=(j+.015+.97*frac)*pitch
             p,n,h=station(s)
             section.append((p,n,h+crown*height))
@@ -414,7 +419,7 @@ def rampart(name, route, base_top, crown=.98):
         outline(5,8,-.12,None)
         outline(3,5,-.12,.31)
         outline(3,5,.48,None)
-    merlons.emit(name+' | pierced merlon course',wall,red,.025)
+    merlons.emit(name+' | pierced merlon course',wall,cream if name=='Gateway crown' else red,.033)
 
 
 def swell(start,end,centres):
@@ -432,14 +437,14 @@ def swell(start,end,centres):
     return path
 
 
-rampart('Western curtain',swell(-113,-7.72,[(-77,9,4.3),(-14,8.1,4.4)]),
-        lambda x:8.15+max(0,min(1,(x+80)/68))*1.85,1.66)
+rampart('Western curtain',swell(-94,-7.72,[(-75,8.75,4.8),(-11.9,5.8,6.5)]),
+        lambda x:6.45+max(0,min(1,(x+80)/65))*3.33,1.65)
 # Right drum turns around its outer flank and into the return, keeping the crown
 # on the same curve. Its far edge is deliberately cropped by the matched lens.
 r=6.5
 cx=14.35
 route=[(7.70,0)]+[(cx+r*cos(a),.55+r*sin(a)) for a in [pi+i*pi/64 for i in range(65)]]+[(cx+r,12)]
-rampart('Eastern drum and return',route,10.25,1.84)
+rampart('Eastern drum and return',route,9.04,1.90)
 rampart('Gateway crown', [(-7.7,.32),(7.7,.32)],11.28,1.06)
 # This crown sits above the gateway. Remove the sweep body below it to keep the
 # entrance clear; the separately modeled ashlar body supports the merlons.
@@ -535,7 +540,6 @@ def facade_run(label,x,y,z,angle,length,height,bays,outer,balconies=(),screens=T
     for i in range(bays):
         center=(i+.5)*pitch
         w=min(1.52,pitch*.65)
-        spr=z+.92*height
         sill=z+.20*height
         head=z+.78*height
         p.box(center-pitch/2,center+pitch/2,0,.82,z,sill)
@@ -565,6 +569,8 @@ def palace_wing(label,x1,x2,y1,y2,bottom,top,bays,mat,show_upper=True):
     slab(label+' | inner core',palace,mat,(x1+.80,x2-.85,y1+.91,y2,bottom,top))
     facade_run(label+' front',x1,y1,bottom,0,x2-x1,size,bays,mat,
                tuple(i for i in range(bays) if show_upper and i in (1,bays-2)),True)
+    for xx in [x1+.34,x2-.34]:
+        slab(label+' | corner bond',palace,mat,(xx-.34,xx+.34,y1+.03,y1+1.05,bottom,top),.026)
     facade_run(label+' return',x2,y1,bottom,pi/2,y2-y1,size,max(2,round((y2-y1)/3.9)),mat)
     cornice(label+' | carved chhajja',palace,x1,x2,y1,y2,top,.65,rose)
     dentils=Carving()
@@ -587,7 +593,15 @@ palace_wing('West • upper apartments',west1+1,west2-.5,9.9,west_back-.7,15.55,
 palace_wing('West • raised corner range',west2-12,west2-.6,9.95,24,18.94,21.25,4,umber,False)
 # Eastern pavilion is lower and partly obscured by the crescent drum.
 east1,east2=plan_x(433,6.8),plan_x(760,6.8)
-slab('East palace | drum-side terrace',palace,red,(east1,east2,6.8,16,.1,11.1))
+for a,b in [(east1,-5.02),(5.02,east2)]:
+    slab('East palace | terrace flanking vaulted passage',palace,red,(a,b,6.8,16,.07,11.1))
+slab('East palace | gallery over passage',palace,red,(-5.02,5.02,6.8,16,8.32,11.1))
+rear=Carving()
+arch_shell(rear,0,2.55,4.17,3.12,10.8,16.0,3.14,8.16,.40)
+rear.emit('Passage | rear vault to open yard',passage,red,.027)
+for a,b in [(-7.7,-2.58),(2.58,7.7)]:
+    slab('Portal | footing below plinth',gate,cream,(a,b,-.07,1.38,.05,.43),.017)
+
 palace_wing('East • gate terrace gallery',east1,east2,6.8,15.7,11.08,14.25,12,rose)
 
 def pavilion(name,x,y,z,r,mat,large=False):
@@ -672,6 +686,63 @@ for j,(xx,h) in enumerate([(plan_x(286,ycurb),4.95),(left_end,5.05),(right_start
     p.emit('Street pier • lantern finial %d'%j,street,umber,.013)
 
 
+# The approach in the photograph has a second, inclined wall in front of
+# the long curtain. Its diagonal gives the left elevation a scale cue.
+run=Carving()
+lip=Carving()
+for shape,offset in [(run,0),(lip,.075)]:
+    sections=[]
+    for u,v in [(132,337),(228,316),(304,298),(385,277)]:
+        x=plan_x(u,-5.6)
+        z=projected_z(u,v,-5.6)
+        low=.12 if offset==0 else z-.09
+        sections.append([(x,-5.6-offset,low),(x,-5.6-offset,z+offset),
+                         (x,-5.03+offset,z+offset),(x,-5.03+offset,low)])
+    shape.rings(sections)
+run.emit('West approach | ascending enclosure',wall,rose,.04)
+lip.emit('West approach | raised coping',wall,cream,.018)
+
+# The west corner is partly screened by a street tree in the benchmark.
+# Build fine silhouette and leaf clusters at that location; species is unknown.
+def street_tree():
+    twigs=Carving()
+    leaves=Carving()
+    bark=stone_material('Street tree | grey bark',(.075,.052,.036),(.21,.16,.102))
+    green=stone_material('Street tree | dusty foliage',(.025,.060,.026),(.125,.205,.067))
+    x=plan_x(65,-4.4)
+    root=Vector((x,-4.4,.08))
+    def branch(a,b,r0,r1):
+        axis=(b-a).normalized()
+        u=axis.cross(Vector((0,1,0))).normalized()
+        v=axis.cross(u)
+        twigs.rings([[tuple(point+rad*(u*cos(i*pi/3)+v*sin(i*pi/3))) for i in range(6)]
+                     for point,rad in [(a,r0),(b,r1)]])
+    fork=root+Vector((-.4,.2,3.0))
+    branch(root,fork,.34,.24)
+    for i in range(19):
+        az=i*2.40
+        length=rng.uniform(2.3,4.2)
+        limb=fork+Vector((length*.53*cos(az),length*.53*sin(az),rng.uniform(1.7,3.3)))
+        tip=limb+Vector((length*.48*cos(az),length*.48*sin(az),rng.uniform(.65,2.6)))
+        branch(fork,limb,.105,.056)
+        branch(limb,tip,.056,.022)
+        for j in range(13):
+            a=rng.uniform(0,2*pi)
+            end=tip+Vector((1.3*cos(a),1.3*sin(a),rng.uniform(-.65,1.35)))
+            branch(tip,end,.025,.008)
+            for k in range(103):
+                pos=end+Vector((rng.gauss(0,.62),rng.gauss(0,.55),rng.gauss(0,.43)))
+                t=rng.uniform(0,2*pi)
+                axis=Vector((.15*cos(t),.15*sin(t),rng.uniform(-.11,.10)))
+                cross=Vector((-.06*sin(t),.06*cos(t),.035))
+                idx=len(leaves.verts)
+                leaves.verts.extend([tuple(pos-axis),tuple(pos+cross),tuple(pos+axis),tuple(pos-cross)])
+                leaves.faces.append(tuple(range(idx,idx+4)))
+    twigs.emit('West street tree | branches',street,bark)
+    leaves.emit('West street tree | leaf canopy',street,green)
+street_tree()
+
+
 def add_cartouche():
     relief=Carving()
     for side in (-1,1):
@@ -701,6 +772,7 @@ scene.render.resolution_y=1000
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format='PNG'
 scene.render.film_transparent=False
+scene.view_settings.exposure=.32
 scene.frame_end=61
 scene.frame_set(61)
 
@@ -713,24 +785,24 @@ tex=nodes.new('ShaderNodeTexCoord')
 xyz=nodes.new('ShaderNodeSeparateXYZ')
 link(tex.outputs['Generated'],xyz.inputs[0])
 sky=nodes.new('ShaderNodeValToRGB')
-sky.color_ramp.elements[0].color=(.56,.67,.78,1)
+sky.color_ramp.elements[0].color=(.63,.71,.87,1)
 sky.color_ramp.elements[1].position=.61
-sky.color_ramp.elements[1].color=(.15,.32,.57,1)
+sky.color_ramp.elements[1].color=(.161,.236,.478,1)
 link(xyz.outputs['Z'],sky.inputs[0])
 bg=nodes.get('Background')
 link(sky.outputs[0],bg.inputs[0])
-bg.inputs['Strength'].default_value=.77
+bg.inputs['Strength'].default_value=1.05
 light=bpy.data.lights.new('Day sun','SUN')
-light.energy=3.2
+light.energy=4.1
 light.angle=math.radians(1.2)
 sun=bpy.data.objects.new('Sun • street daylight',light)
 rig.objects.link(sun)
 sun.rotation_euler=Vector((.55,.73,-.92)).to_track_quat('-Z','Y').to_euler()
 light.color=(1,.931,.824)
 cams=[('01-reference-matched-exterior',match),
-      ('02-three-quarter-exterior',camera('02 | Along the western curtain',(-51,-51,7),(-18,5,8.4),33)),
+      ('02-three-quarter-exterior',camera('02 | Along the western curtain',(-34,-47,7),(-8,3,8.20),37)),
       ('03-human-eye-approach',camera('03 | Forecourt, eye level',(-4.2,-21.0,1.72),(-.35,1,4.9),33)),
-      ('04-gateway-closeup',camera('04 | Threshold and vaulted return',(4.35,-9.9,2.55),(-.10,1.2,4.1),27)),
+      ('04-gateway-closeup',camera('04 | Threshold and vaulted return',(1.9,-7.7,2.05),(-.31,1.7,3.80),25)),
       ('05-architectural-detail',camera('05 | Western jharokha and roof pavilions',(west2+3.4,-3.0,15.2),(west2-5.3,10,17.45),47)),
       ('06-cinematic-exterior',camera('06 | Late sun, street frontage',(17.4,-46,3.3),(-11,4,9.2),34))]
 scene.camera=match
