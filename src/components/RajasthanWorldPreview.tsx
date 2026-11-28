@@ -1,41 +1,86 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import gsap from 'gsap';
-import { ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowLeft, Map as MapIcon } from 'lucide-react';
+import { createJunagarh } from './junagarhScene';
 import { createRajasthanTerrain, type ChapterPoint } from './rajasthanTerrain';
 import './RajasthanWorldPreview.css';
 
-type Journey = 'map' | 'approaching' | 'threshold' | 'returning';
 type Pose = { position: THREE.Vector3; target: THREE.Vector3; fov: number; shiftX: number; shiftY: number };
 type Mark = { anchorX: number; anchorY: number; x: number; y: number };
+type Beat = 'opening' | 'lift' | 'atlas' | 'descent' | 'approach' | 'threshold';
 
-const number = (chapter: number) => String(chapter).padStart(2, '0');
-const smallWords = new Set(['the', 'into', 'to', 'with']);
-const chapterName = (title: string) => title.toLowerCase().replace(/\b\w+/g, (word, index) =>
-  index > 0 && smallWords.has(word) ? word : word[0].toUpperCase() + word.slice(1),
-);
-const revealEase = gsap.parseEase('sine.inOut');
-const motionQuery = '(prefers-reduced-motion: reduce)';
+const MAP_START = 0.28;
+const MAP_END = 0.40;
+const MAP_STOP = 0.34;
+const LOCAL_START = 0.87;
 const clamp = THREE.MathUtils.clamp;
+const mix = THREE.MathUtils.lerp;
+const smooth = THREE.MathUtils.smoothstep;
+const ease = THREE.MathUtils.smootherstep;
+const motionQuery = '(prefers-reduced-motion: reduce)';
+const number = (chapter: number) => String(chapter).padStart(2, '0');
 
-function pose(position: number[], target: number[], fov: number): Pose {
+function pose(position: [number, number, number], target: [number, number, number], fov: number): Pose {
   return { position: new THREE.Vector3(...position), target: new THREE.Vector3(...target), fov, shiftX: 0, shiftY: 0 };
 }
 
-function blend(from: Pose, to: Pose, progress: number, result: Pose) {
-  result.position.lerpVectors(from.position, to.position, progress);
-  result.target.lerpVectors(from.target, to.target, progress);
-  result.fov = THREE.MathUtils.lerp(from.fov, to.fov, progress);
-  result.shiftX = THREE.MathUtils.lerp(from.shiftX, to.shiftX, progress);
-  result.shiftY = THREE.MathUtils.lerp(from.shiftY, to.shiftY, progress);
+function pathBlend(from: Pose, to: Pose, t: number, result: Pose) {
+  result.position.lerpVectors(from.position, to.position, t);
+  result.target.lerpVectors(from.target, to.target, t);
+  result.fov = mix(from.fov, to.fov, t);
+  result.shiftX = mix(from.shiftX, to.shiftX, t);
+  result.shiftY = mix(from.shiftY, to.shiftY, t);
 }
 
-function approachPose(chapter: ChapterPoint, mobile: boolean, width: number, height: number) {
-  const [x, y, z] = chapter.world_xyz_km;
-  const approach = pose([x + 132, y + 139, z + 184], [x - 12, y, z - 11], mobile ? 50 : 38);
-  approach.shiftX = mobile ? 0 : -width * 0.11;
-  approach.shiftY = height * 0.10;
-  return approach;
+function beatAt(p: number): Beat {
+  if (p >= 0.985) return 'threshold';
+  if (p >= LOCAL_START) return 'approach';
+  if (p > MAP_END) return 'descent';
+  if (p >= MAP_START) return 'atlas';
+  return p > 0.006 ? 'lift' : 'opening';
+}
+
+function createPath(opening: Pose, atlas: Pose, anchor: THREE.Vector3, mobile: boolean) {
+  const toWorld = (x: number, y: number, z: number) => anchor.clone().addScaledVector(new THREE.Vector3(x, y, z), .001);
+  const entry = toWorld(mobile ? 17 : 24, mobile ? 15 : 18, mobile ? 91 : 81);
+  const entryLook = toWorld(mobile ? -8 : -18, 8, 1);
+  const threshold = toWorld(mobile ? -1.4 : -2.1, 2.32, mobile ? 9.7 : 8.4);
+  const thresholdLook = toWorld(-.12, mobile ? 5.25 : 4.55, .8);
+  const localPosition = new THREE.CatmullRomCurve3([entry, toWorld(12, 6.8, 48), toWorld(3.8, 3.3, 25), threshold]);
+  const localTarget = new THREE.CatmullRomCurve3([entryLook, toWorld(-3.2, 6.7, 0), thresholdLook]);
+  const regionalOffset = new THREE.Spherical().setFromVector3(atlas.position.clone().sub(atlas.target));
+  const entryOffset = new THREE.Spherical().setFromVector3(entry.clone().sub(entryLook));
+  const turn = THREE.MathUtils.euclideanModulo(entryOffset.theta - regionalOffset.theta + Math.PI, Math.PI * 2) - Math.PI;
+  const orbit = new THREE.Spherical();
+  const result = pose([0, 0, 0], [0, 0, 0], 40);
+
+  return (progress: number) => {
+    if (progress <= MAP_END) {
+      pathBlend(opening, atlas, ease(progress, 0, MAP_START), result);
+    } else if (progress < LOCAL_START) {
+      const t = (progress - MAP_END) / (LOCAL_START - MAP_END);
+      const dolly = Math.pow(smooth(t, 0, 1), 1.85);
+      result.target.lerpVectors(atlas.target, anchor, ease(t, 0, .36));
+      result.target.lerp(entryLook, ease(t, .60, 1));
+      orbit.set(
+        Math.exp(mix(Math.log(regionalOffset.radius), Math.log(entryOffset.radius), dolly)),
+        mix(regionalOffset.phi, entryOffset.phi, ease(t, .02, .76)),
+        regionalOffset.theta + turn * ease(t, .12, .88),
+      );
+      result.position.setFromSpherical(orbit).add(result.target);
+      const framed = 1 - ease(t, 0, .32);
+      result.shiftX = atlas.shiftX * framed;
+      result.shiftY = atlas.shiftY * framed;
+      result.fov = mix(atlas.fov, mobile ? 51 : 44, dolly);
+    } else {
+      const t = smooth(progress, LOCAL_START, 1);
+      localPosition.getPointAt(t, result.position);
+      localTarget.getPointAt(t, result.target);
+      result.fov = mix(mobile ? 51 : 44, mobile ? 49 : 50, t);
+      result.shiftX = result.shiftY = 0;
+    }
+    return result;
+  };
 }
 
 function chapterMarks(points: Mark[], width: number, top: number, bottom: number) {
@@ -68,175 +113,106 @@ function chapterMarks(points: Mark[], width: number, top: number, bottom: number
   return marks;
 }
 
-interface PreviewProps {
-  onExteriorReady?: (chapter: ChapterPoint) => void;
-}
-
-export default function RajasthanWorldPreview({ onExteriorReady }: PreviewProps) {
+export default function RajasthanWorldPreview() {
   const runwayRef = useRef<HTMLElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const mapHeadingRef = useRef<HTMLHeadingElement>(null);
-  const thresholdRef = useRef<HTMLHeadingElement>(null);
-  const destinationPinRef = useRef<HTMLDivElement>(null);
-  const approachButtonRef = useRef<HTMLButtonElement>(null);
-  const focusMap = useRef(false);
-  const focusApproach = useRef(false);
-  const journeyRef = useRef<Journey>('map');
-  const chapterRef = useRef<ChapterPoint | null>(null);
-  const travel = useRef({ progress: 0 });
-  const returnAction = useRef<() => void>(() => {});
-  const tweenRef = useRef<gsap.core.Tween | null>(null);
-  const redraw = useRef(() => {});
-  const chaptersRef = useRef<ChapterPoint[]>([]);
+  const mapButton = useRef<HTMLButtonElement>(null);
+  const firstMarker = useRef<HTMLButtonElement>(null);
+  const requestedFocus = useRef<'map' | 'controls' | null>(null);
+  const retryExterior = useRef(() => {});
   const [chapters, setChapters] = useState<ChapterPoint[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
-  const [reveal, setReveal] = useState<'opening' | 'scrolling' | 'atlas'>('opening');
-  const [journey, setJourney] = useState<Journey>('map');
-  const [selection, setSelection] = useState<ChapterPoint | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [available, setAvailable] = useState(true);
-  const [error, setError] = useState(false);
+  const [beat, setBeat] = useState<Beat>('opening');
+  const [selected, setSelected] = useState<ChapterPoint | null>(null);
+  const [terrainAvailable, setTerrainAvailable] = useState(true);
+  const [load, setLoad] = useState<'loading' | 'done' | 'failed'>('loading');
+  const [exterior, setExterior] = useState<'loading' | 'done' | 'failed'>('loading');
 
-  function changeJourney(next: Journey) {
-    journeyRef.current = next;
-    setJourney(next);
+  function seek(at: number, focus: 'map' | 'controls' | null) {
+    const distance = runwayRef.current!.offsetHeight - viewportRef.current!.offsetHeight;
+    requestedFocus.current = focus;
+    window.scrollTo({ top: distance * at, behavior: matchMedia(motionQuery).matches ? 'instant' : 'smooth' });
+    if (focus === 'controls') runwayRef.current?.focus({ preventScroll: true });
   }
 
-  function showAtlas() {
-    focusMap.current = true;
-    const runway = runwayRef.current!;
-    const distance = runway.offsetHeight - viewportRef.current!.offsetHeight;
-    window.scrollTo({ top: distance, behavior: matchMedia(motionQuery).matches ? 'instant' : 'smooth' });
-    if (reveal === 'atlas') {
-      mapHeadingRef.current?.focus({ preventScroll: true });
-      focusMap.current = false;
-    }
-  }
-
-  function select(chapter: ChapterPoint, keyboard: boolean) {
-    if (keyboard && chapterRef.current === chapter) {
-      approachButtonRef.current?.focus({ preventScroll: true });
-      return;
-    }
-    focusApproach.current = keyboard;
-    chapterRef.current = chapter;
-    setSelection(chapter);
-  }
-
-  function beginApproach() {
-    const chapter = chapterRef.current;
-    if (!chapter || journeyRef.current !== 'map') return;
-    changeJourney('approaching');
-    tweenRef.current = gsap.to(travel.current, {
-      progress: 1,
-      duration: matchMedia(motionQuery).matches || !available ? 0 : 1.45,
-      ease: 'power2.inOut',
-      onUpdate: redraw.current,
-      onComplete: () => {
-        changeJourney('threshold');
-        onExteriorReady?.(chapter);
-      },
-    });
-  }
-
-  function returnToMap() {
-    if (journeyRef.current === 'returning') return;
-    tweenRef.current?.kill();
-    changeJourney('returning');
-    tweenRef.current = gsap.to(travel.current, {
-      progress: 0,
-      duration: matchMedia(motionQuery).matches || !available ? 0 : 1.05,
-      ease: 'power2.inOut',
-      onUpdate: redraw.current,
-      onComplete: () => changeJourney('map'),
-    });
-  }
-
+  const mapShown = load === 'done' && (beat === 'atlas' || !terrainAvailable);
   useEffect(() => {
-    returnAction.current = returnToMap;
-  });
-
-  useEffect(() => {
-    if (reveal === 'atlas' && focusMap.current) {
-      mapHeadingRef.current?.focus({ preventScroll: true });
-      focusMap.current = false;
+    if (mapShown && requestedFocus.current === 'map') {
+      firstMarker.current?.focus({ preventScroll: true });
+      requestedFocus.current = null;
     }
-  }, [reveal]);
-
-  useEffect(() => {
-    if (focusApproach.current) {
-      approachButtonRef.current?.focus({ preventScroll: true });
-      focusApproach.current = false;
+    if (beat === 'threshold' && requestedFocus.current === 'controls') {
+      mapButton.current?.focus({ preventScroll: true });
+      requestedFocus.current = null;
     }
-  }, [selection]);
-
-  useEffect(() => {
-    if (journey === 'threshold') {
-      redraw.current();
-      thresholdRef.current?.focus({ preventScroll: true });
-    }
-    if (journey === 'map') approachButtonRef.current?.focus({ preventScroll: true });
-  }, [journey]);
+  }, [mapShown, beat]);
 
   useEffect(() => {
     const runway = runwayRef.current!;
     const viewport = viewportRef.current!;
     const container = mountRef.current!;
-    const reducedMotion = matchMedia(motionQuery);
-    const debug = new URLSearchParams(window.location.search).has('debug');
+    const reduced = matchMedia(motionQuery);
+    const debug = new URLSearchParams(location.search).has('debug');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, .3, 3600);
+    const stats = window as Window & { __rajasthanWorldStats?: object };
     let renderer: THREE.WebGLRenderer | undefined;
-    let world: ReturnType<typeof createRajasthanTerrain> | undefined;
-    let stopped = false;
+    let terrain: ReturnType<typeof createRajasthanTerrain> | undefined;
+    let fort: ReturnType<typeof createJunagarh> | undefined;
+    let manifest: ChapterPoint[] = [];
+    let anchor = new THREE.Vector3();
+    let contextLost = false;
+    let disposed = false;
     let frame = 0;
-    let progress = 0;
+    let draws = 0;
+    let adapter = '';
     let width = 1;
     let height = 1;
     let mobile = false;
-    let opening = pose([], [], 40);
-    let atlas = pose([], [], 40);
-    const current = pose([], [], 40);
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 3600);
-    const debugWindow = window as Window & { __rajasthanWorldStats?: object };
-    let draws = 0;
-    let adapter = '';
+    let detailRequested = false;
+    let exteriorRequested = false;
+    let progress = 0;
+    let path: ReturnType<typeof createPath>;
 
-    function applyPose(view: Pose) {
-      camera.position.copy(view.position);
-      camera.lookAt(view.target);
-      camera.fov = view.fov;
-      camera.setViewOffset(width, height, view.shiftX, view.shiftY, width, height);
+    function apply(current: Pose, near = .3) {
+      camera.position.copy(current.position);
+      camera.lookAt(current.target);
+      camera.near = near;
+      camera.fov = current.fov;
+      camera.setViewOffset(width, height, current.shiftX, current.shiftY, width, height);
       camera.updateMatrixWorld();
     }
 
     function project(chapter: ChapterPoint): Mark {
-      const projected = new THREE.Vector3(...chapter.world_xyz_km).project(camera);
-      const x = (projected.x + 1) * width / 2;
-      const y = (1 - projected.y) * height / 2;
-      return { anchorX: x, anchorY: y, x, y };
+      const point = new THREE.Vector3(...chapter.world_xyz_km).project(camera);
+      const x = (point.x + 1) * width / 2;
+      const y = (1 - point.y) * height / 2;
+      return { x, y, anchorX: x, anchorY: y };
     }
 
     function render() {
       frame = 0;
-      if (!renderer) return;
+      if (!renderer || !path || contextLost) return;
       const start = performance.now();
-      const revealProgress = reducedMotion.matches ? Number(progress >= 0.985) : revealEase(progress);
-      blend(opening, atlas, revealProgress, current);
-      if (chapterRef.current && travel.current.progress) {
-        blend(atlas, approachPose(chapterRef.current, mobile, width, height), travel.current.progress, current);
-      }
-      applyPose(current);
-      if (chapterRef.current && destinationPinRef.current) {
-        const point = project(chapterRef.current);
-        destinationPinRef.current.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%)`;
-      }
+      const at = reduced.matches ? progress >= .82 ? 1 : progress >= .22 ? MAP_STOP : 0 : progress;
+      const effective = at;
+      const cameraPose = path(effective);
+      const offset = cameraPose.position.distanceTo(anchor);
+      apply(cameraPose, clamp(offset * .014, .00017, .35));
+      const logical = reduced.matches ? beatAt(at) : beatAt(progress);
+      terrain?.useLocalShadows(fort?.update(logical === 'atlas', offset) ?? false);
+      terrain?.useDetail(!mobile && progress > .09 && progress < .74);
       renderer.render(scene, camera);
       if (debug) {
-        debugWindow.__rajasthanWorldStats = {
-          renderer: adapter,
-          draws: ++draws, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
-          submitMs: performance.now() - start, progress, position: camera.position.toArray(), detailLoaded: world?.detailLoaded,
+        stats.__rajasthanWorldStats = {
+          renderer: adapter, draws: ++draws, progress, effective, beat: logical,
+          position: camera.position.toArray(), quaternion: camera.quaternion.toArray(),
+          fov: camera.fov, near: camera.near, submitMs: performance.now() - start,
+          drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
+          geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
+          detailLoaded: terrain?.detailLoaded, exteriorReady: fort?.ready,
+          canvas: [renderer.domElement.width, renderer.domElement.height],
         };
       }
     }
@@ -244,7 +220,6 @@ export default function RajasthanWorldPreview({ onExteriorReady }: PreviewProps)
     function requestDraw() {
       if (!frame && renderer && !document.hidden) frame = requestAnimationFrame(render);
     }
-    redraw.current = requestDraw;
 
     function size() {
       width = viewport.clientWidth;
@@ -252,245 +227,219 @@ export default function RajasthanWorldPreview({ onExteriorReady }: PreviewProps)
       mobile = width < 700;
       renderer?.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.35 : 1.5));
       renderer?.setSize(width, height);
-      opening = mobile
+      const opening = mobile
         ? pose([10, 56, 217], [-100, 19, 57], 48)
         : pose([24, 51, 227], [-96, 17, 54], 38);
-      atlas = mobile
-        ? pose([303, 586, 292], [-22, 0, 17], 48)
-        : pose([-75, 458, 407], [-22, 0, 17], 40);
+      const atlas = mobile
+        ? pose([323, 496, 328], [-24, 0, 13], 49)
+        : pose([-55, 411, 348], [-20, 0, 12], 42);
 
-      if (chaptersRef.current.length && renderer) {
-        const dockHeight = mobile ? 235 : 156;
-        const top = mobile ? 131 : 146;
-        const bottom = height - dockHeight;
+      if (manifest.length) {
         const offset = atlas.position.clone().sub(atlas.target);
-        for (let attempt = 0; attempt < 8; attempt++) {
-          applyPose(atlas);
-          const points = chaptersRef.current.map(project);
-          const minX = Math.min(...points.map(({ x }) => x));
-          const maxX = Math.max(...points.map(({ x }) => x));
-          const minY = Math.min(...points.map(({ y }) => y));
-          const maxY = Math.max(...points.map(({ y }) => y));
-          const scale = Math.max(
-            (maxX - minX) / (width - (mobile ? 108 : 170)),
-            (maxY - minY) / Math.max(90, bottom - top - 40),
-          );
-          if (scale > 1.005) {
+        const edgeX = mobile ? 80 : 172;
+        const edgeY = mobile ? 150 : 145;
+        for (let i = 0; i < 8; i++) {
+          apply(atlas);
+          const points = manifest.map(project);
+          const minX = Math.min(...points.map((p) => p.x));
+          const minY = Math.min(...points.map((p) => p.y));
+          const maxX = Math.max(...points.map((p) => p.x));
+          const maxY = Math.max(...points.map((p) => p.y));
+          const scale = Math.max((maxX - minX) / Math.max(130, width - edgeX), (maxY - minY) / Math.max(130, height - edgeY));
+          if (scale > 1.004) {
             atlas.position.copy(atlas.target).add(offset.multiplyScalar(scale));
             continue;
           }
           atlas.shiftX = (minX + maxX - width) / 2;
-          atlas.shiftY = (minY + maxY - top - bottom) / 2;
+          atlas.shiftY = (minY + maxY - height) / 2 - 7;
           break;
         }
-        applyPose(atlas);
-        setMarks(chapterMarks(chaptersRef.current.map(project), width, top - 15, bottom + 6));
+        apply(atlas);
+        setMarks(chapterMarks(manifest.map(project), width, 57, height - 25));
       }
+
+      path = createPath(opening, atlas, anchor, mobile);
       requestDraw();
     }
+
+    function streamExterior() {
+      if (!fort || exteriorRequested) return;
+      exteriorRequested = true;
+      setExterior('loading');
+      void fort.loadExterior().then(() => {
+        if (disposed) return;
+        if (renderer && fort && progress < .67 && !contextLost) {
+          fort.update(false, .10);
+          terrain?.useLocalShadows(true);
+          void renderer.compileAsync(scene, camera).catch((error: unknown) => {
+            if (debug) console.warn(error);
+          });
+          terrain?.useLocalShadows(false);
+        }
+        setExterior('done');
+        requestDraw();
+      }).catch((error: unknown) => {
+        if (disposed) return;
+        exteriorRequested = false;
+        setExterior('failed');
+        if (debug) console.error(error);
+      });
+    }
+
+    retryExterior.current = streamExterior;
 
     function scroll() {
       const distance = Math.max(1, runway.offsetHeight - viewport.offsetHeight);
       progress = clamp(-runway.getBoundingClientRect().top / distance, 0, 1);
-      setReveal(progress >= 0.985 ? 'atlas' : progress < 0.72 ? 'opening' : 'scrolling');
-      viewport.style.setProperty('--opening-opacity', String(1 - clamp(progress / 0.72, 0, 1)));
-      if (progress < 0.985 && journeyRef.current !== 'map') {
-        tweenRef.current?.kill();
-        travel.current.progress = 0;
-        changeJourney('map');
+      const at = reduced.matches ? progress >= .82 ? 1 : progress >= .22 ? MAP_STOP : 0 : progress;
+      setBeat(beatAt(at));
+
+      if (progress > .10 && !detailRequested && terrain && !mobile) {
+        detailRequested = true;
+        void terrain.loadDetail().then(requestDraw).catch((error: unknown) => {
+          if (debug) console.warn(error);
+        });
       }
-      if (progress > 0.45 && world) {
-        void world.loadDetail().then((loaded) => {
-          if (loaded) requestDraw();
-        }).catch((reason) => { if (debug) console.warn('Mewar terrain unavailable', reason); });
-      }
+      if (progress > .16 && !exteriorRequested) streamExterior();
       requestDraw();
     }
 
-    function escape(event: KeyboardEvent) {
-      if (event.key === 'Escape' && journeyRef.current !== 'map') returnAction.current();
-    }
-
-    function contextLost(event: Event) {
+    function onContextLost(event: Event) {
       event.preventDefault();
-      changeJourney('map');
-      tweenRef.current?.kill();
-      travel.current.progress = 0;
-      setAvailable(false);
+      contextLost = true;
+      setTerrainAvailable(false);
     }
 
-    function contextRestored() {
-      setAvailable(true);
-      size();
+    function onRestored() {
+      contextLost = false;
+      terrain?.useLocalShadows(false);
+      setTerrainAvailable(true);
+      requestDraw();
     }
 
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = .92;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       if (debug) {
         const gl = renderer.getContext();
-        const extension = gl.getExtension('WEBGL_debug_renderer_info');
-        adapter = extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        const rendererInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        adapter = rendererInfo ? gl.getParameter(rendererInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
       }
-      renderer.domElement.addEventListener('webglcontextlost', contextLost);
-      renderer.domElement.addEventListener('webglcontextrestored', contextRestored);
+      renderer.domElement.addEventListener('webglcontextlost', onContextLost);
+      renderer.domElement.addEventListener('webglcontextrestored', onRestored);
       container.appendChild(renderer.domElement);
-      world = createRajasthanTerrain(renderer, scene);
+      terrain = createRajasthanTerrain(renderer, scene);
     } catch {
-      setAvailable(false);
+      setTerrainAvailable(false);
     }
 
+    const abort = new AbortController();
     async function prepare() {
       try {
-        const data = await (world ? world.load() : fetch('/preview/rajasthan-world/manifest.json').then((response) => {
+        const data = await (terrain ? terrain.load() : fetch('/preview/rajasthan-world/manifest.json', { signal: abort.signal }).then((response) => {
           if (!response.ok) throw new Error('Terrain manifest unavailable');
           return response.json() as Promise<{ chapters: ChapterPoint[] }>;
         }));
-        if (stopped) return;
-        chaptersRef.current = data.chapters;
-        setChapters(data.chapters);
-        setLoading(false);
+        if (disposed) return;
+        manifest = data.chapters;
+        const first = manifest[0];
+        anchor = new THREE.Vector3(...first.world_xyz_km);
+        if (terrain) {
+          anchor.y = terrain.heightAt(anchor.x, anchor.z, anchor.y) + .0004;
+          terrain.lightForecourt(anchor, mobile);
+          fort = createJunagarh(scene, anchor);
+          void fort.loadAtlas().then(requestDraw).catch((error: unknown) => {
+            if (debug) console.warn(error);
+          });
+        }
+        setChapters(manifest);
+        setLoad('done');
         size();
         scroll();
-      } catch (reason) {
-        if (stopped) return;
-        if (debug) console.error(reason);
-        setLoading(false);
-        setError(true);
+      } catch (error) {
+        if (disposed) return;
+        if (debug) console.error(error);
+        setLoad('failed');
       }
     }
 
     const observer = new ResizeObserver(() => { size(); scroll(); });
     observer.observe(viewport);
     window.addEventListener('scroll', scroll, { passive: true });
-    window.addEventListener('keydown', escape);
+    reduced.addEventListener('change', scroll);
     document.addEventListener('visibilitychange', requestDraw);
-    reducedMotion.addEventListener('change', scroll);
-    void prepare();
     size();
     scroll();
+    void prepare();
 
     return () => {
-      stopped = true;
-      tweenRef.current?.kill();
+      disposed = true;
+      abort.abort();
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener('scroll', scroll);
-      window.removeEventListener('keydown', escape);
+      reduced.removeEventListener('change', scroll);
       document.removeEventListener('visibilitychange', requestDraw);
-      reducedMotion.removeEventListener('change', scroll);
-      world?.dispose();
-      renderer?.domElement.removeEventListener('webglcontextlost', contextLost);
-      renderer?.domElement.removeEventListener('webglcontextrestored', contextRestored);
+      fort?.dispose();
+      terrain?.dispose();
+      renderer?.domElement.removeEventListener('webglcontextlost', onContextLost);
+      renderer?.domElement.removeEventListener('webglcontextrestored', onRestored);
       renderer?.dispose();
       renderer?.domElement.remove();
-      delete debugWindow.__rajasthanWorldStats;
+      delete stats.__rajasthanWorldStats;
     };
   }, []);
 
-  const atlasVisible = reveal === 'atlas' && journey === 'map' && !loading && !error;
-  const travelling = journey !== 'map';
+  const leavingMap = beat === 'descent' || beat === 'approach' || beat === 'threshold';
+  const nearFort = beat === 'approach' || beat === 'threshold';
 
   return (
-    <main className="rw" ref={runwayRef}>
-      <div className="rw-viewport" ref={viewportRef} data-stage={travelling ? journey : reveal} data-terrain={available}>
+    <main className="rw" ref={runwayRef} tabIndex={-1} aria-label="Rajasthan" onKeyDown={(event) => {
+      if (event.key === 'Escape' && leavingMap) seek(MAP_STOP, 'map');
+    }}>
+      <div className="rw-viewport" ref={viewportRef} data-stage={beat} data-terrain={terrainAvailable}>
         <div className="rw-canvas" ref={mountRef} aria-hidden="true" />
-        <div className="rw-light" aria-hidden="true" />
-        <header className="rw-header">
-          <a href="/"><ArrowLeft size={15} /> Introduction</a>
-          <span>The Living Signal</span>
-        </header>
-
-        {loading && <p className="rw-status" role="status">Loading Rajasthan terrain…</p>}
-        {error && <div className="rw-status" role="alert">
-          <p>The Rajasthan terrain could not be loaded.</p>
-          <button className="rw-link" onClick={() => window.location.reload()}>Reload terrain <ArrowRight size={16} /></button>
-        </div>}
-
-        {!loading && !error && reveal === 'opening' && (
-          <section className="rw-opening">
-            <h1>Rajasthan</h1>
-            <p>From the Aravalli ridges to the Thar plains</p>
-            <button className="rw-link" onClick={showAtlas}><ArrowDown size={17} /> Explore the chapter map</button>
-          </section>
+        <a className="rw-control rw-back" href="/" aria-label="Return to Page 01"><ArrowLeft size={19} /></a>
+        {load === 'done' && terrainAvailable && beat !== 'atlas' && (
+          <button ref={mapButton} className={`rw-control ${leavingMap ? 'rw-map' : 'rw-next'}`}
+            aria-label={leavingMap ? 'Return to map' : 'Go to chapter map'}
+            onClick={(event) => seek(MAP_STOP, event.detail === 0 ? 'map' : null)}>
+            {leavingMap ? <MapIcon size={18} /> : <ArrowDown size={19} />}
+          </button>
         )}
-
-        {atlasVisible && (
-          <>
-            <div className="rw-map-title">
-              <h1 ref={mapHeadingRef} tabIndex={-1}>Rajasthan</h1>
-              <p>{available ? 'The chapter map' : 'Chapter index · Terrain unavailable'}</p>
-            </div>
-            {available && marks.length === chapters.length && (
-              <div className="rw-markers">
-                <svg className="rw-leaders" aria-hidden="true">
-                  {marks.map((mark, i) => Math.hypot(mark.x - mark.anchorX, mark.y - mark.anchorY) > 8 && (
-                    <g key={chapters[i].chapter} data-active={selection?.chapter === chapters[i].chapter}>
-                      <line x1={mark.anchorX} y1={mark.anchorY} x2={mark.x} y2={mark.y} />
-                      <circle cx={mark.anchorX} cy={mark.anchorY} r="2.25" />
-                    </g>
-                  ))}
-                </svg>
-                {chapters.map((chapter, i) => (
-                  <button className="rw-marker" key={chapter.chapter} style={{ left: marks[i].x, top: marks[i].y }}
-                    aria-label={`Chapter ${number(chapter.chapter)}, ${chapter.fort}`}
-                    aria-pressed={selection?.chapter === chapter.chapter} onClick={(event) => select(chapter, event.detail === 0)}>
-                    <span className="rw-marker-number">{number(chapter.chapter)}</span>
-                  </button>
-                ))}
-                {selection && <span className="rw-marker-name" aria-hidden="true" style={{
-                  left: `clamp(90px, ${marks[selection.chapter - 1].x}px, calc(100% - 90px))`,
-                  top: marks[selection.chapter - 1].y - 18,
-                }}>{selection.fort}</span>}
-              </div>
-            )}
-            <section className="rw-dock" aria-label="Chapter selection">
-              <div className="rw-chapter">
-                {selection ? (
-                  <div aria-live="polite">
-                    <h2>{chapterName(selection.title)}</h2>
-                    <p>{selection.fort}</p>
-                  </div>
-                ) : (
-                  <div><h2>Ten forts, ten chapters</h2><p>Select a destination to begin.</p></div>
-                )}
-                {selection && <button ref={approachButtonRef} className="rw-link rw-approach" onClick={beginApproach}>
-                  Begin approach <ArrowRight size={16} />
-                </button>}
-              </div>
-              <nav className="rw-index" aria-label="Chapter order">
-                <div className="rw-index-caption">
-                  <span>Chapter index</span>
-                  {selection && <span>{number(selection.chapter)} / {chapters.length}</span>}
-                </div>
-                <ol>
-                  {chapters.map((chapter) => (
-                    <li key={chapter.chapter}>
-                      <button onClick={(event) => select(chapter, event.detail === 0)} aria-pressed={selection?.chapter === chapter.chapter}
-                        aria-label={`${number(chapter.chapter)} ${chapter.fort}, ${chapterName(chapter.title)}`}>
-                        {number(chapter.chapter)}
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-            </section>
-          </>
+        {load === 'loading' && <p className="rw-status" role="status">Loading terrain…</p>}
+        {load === 'failed' && <button className="rw-status" onClick={() => location.reload()}>Terrain unavailable. Retry</button>}
+        {nearFort && terrainAvailable && exterior === 'loading' && <p className="rw-status" role="status">Loading exterior…</p>}
+        {nearFort && terrainAvailable && exterior === 'failed' && <button className="rw-status" onClick={() => retryExterior.current()}>Exterior unavailable. Retry</button>}
+        {mapShown && (
+          <nav className={terrainAvailable ? 'rw-markers' : 'rw-fallback'} aria-label="Rajasthan chapter destinations">
+            {!terrainAvailable && <p role="status">Terrain unavailable</p>}
+            {terrainAvailable && <svg className="rw-leaders" aria-hidden="true">
+              {marks.map((point, i) => Math.hypot(point.x - point.anchorX, point.y - point.anchorY) > 8 && (
+                <line key={i} x1={point.anchorX} y1={point.anchorY} x2={point.x} y2={point.y} />
+              ))}
+            </svg>}
+            {chapters.map((chapter, i) => (
+              <button key={chapter.chapter} className="rw-marker" ref={i === 0 ? firstMarker : undefined}
+                style={terrainAvailable ? { left: marks[i]?.x, top: marks[i]?.y } : undefined}
+                aria-label={`Chapter ${number(chapter.chapter)}, ${chapter.fort}, ${chapter.title}`}
+                aria-current={selected?.chapter === chapter.chapter ? 'location' : undefined}
+                onClick={(event) => {
+                  setSelected(chapter);
+                  if (chapter.chapter === 1 && terrainAvailable) seek(1, event.detail === 0 ? 'controls' : null);
+                }}>
+                <span>{number(chapter.chapter)}</span>
+              </button>
+            ))}
+          </nav>
         )}
-
-        {travelling && available && <div className="rw-destination-pin" ref={destinationPinRef} aria-hidden="true"><span /></div>}
-        {travelling && selection && (
-          <section className="rw-arrival">
-            <button className="rw-link" onClick={returnToMap} disabled={journey === 'returning'}>
-              <ArrowLeft size={16} /> Return to map
-            </button>
-            <div className="rw-arrival-title">
-              <p>{chapterName(selection.title)}</p>
-              <h1 ref={thresholdRef} tabIndex={-1}>{selection.fort}</h1>
-              {journey === 'threshold' && <p role="status">{available ? 'At the threshold' : 'Terrain unavailable'}</p>}
-            </div>
-          </section>
-        )}
+        <span className="sr-only" role="status">
+          {beat === 'threshold' && exterior === 'done' ? 'Junagarh Fort gateway threshold' :
+            selected ? `${selected.fort}. ${selected.title}.` : ''}
+        </span>
       </div>
     </main>
   );

@@ -1,0 +1,94 @@
+html:has(.rc-runway) {
+  scrollbar-color: #997656 #3d2a22;
+  scrollbar-width: thin;
+}
+
+.rc-runway {
+  height: calc(100dvh + 135svh);
+  background: #3d2a22;
+}
+
+.rc-stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #3d2a22;
+}
+
+.rc-stage canvas,
+.rc-image {
+  position: absolute;
+  inset: 0 auto auto 0;
+  pointer-events: none;
+}
+
+.rc-stage canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.rc-image {
+  width: var(--rc-image-width);
+  height: var(--rc-image-height);
+  max-width: none;
+  transform: translate3d(var(--rc-image-x), var(--rc-image-y), 0);
+  user-select: none;
+  visibility: hidden;
+}
+
+.rc-stage[data-mode='still'] .rc-image {
+  visibility: visible;
+}
+
+.rc-marker {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: end center;
+  width: 48px;
+  height: 48px;
+  padding: 0 0 10px;
+  color: #fff1d6;
+  cursor: pointer;
+}
+
+.rc-marker span {
+  min-width: 29px;
+  padding: 4px 6px;
+  border: 1px solid #e5ba7b;
+  border-radius: 20px;
+  background: #332117;
+  box-shadow: 0 2px 6px #23150eb3;
+  font: 650 11px/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.rc-marker::after {
+  position: absolute;
+  bottom: 2px;
+  left: calc(50% - 0.5px);
+  width: 1px;
+  height: 8px;
+  background: #ffe1a7;
+  content: '';
+}
+
+.rc-marker:hover span,
+.rc-marker:focus-visible span {
+  color: #332117;
+  background: #ffe1a7;
+}
+
+.rc-marker:focus-visible {
+  outline: 2px solid #fff1d6;
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+.rc-stage [hidden] {
+  display: none;
+}

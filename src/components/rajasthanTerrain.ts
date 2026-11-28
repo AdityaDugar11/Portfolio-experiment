@@ -16,14 +16,14 @@ const ASSETS = '/preview/rajasthan-world';
 const skyColor = /* glsl */ `
   uniform sampler2D panorama;
   vec3 atmosphere(vec3 direction) {
-    float bearing = atan(direction.z, direction.x) * 0.15915494 + 0.813;
+    float bearing = atan(direction.z, direction.x) * 0.15915494 + 0.747;
     float altitude = asin(clamp(direction.y, 0.0, 1.0));
-    vec3 photo = texture2D(panorama, vec2(fract(bearing), 0.499 - altitude * 0.54)).rgb;
-    vec3 peach = vec3(0.78, 0.63, 0.52);
-    vec3 blue = vec3(0.37, 0.51, 0.67);
-    vec3 wash = mix(peach, blue, smoothstep(0.0, 0.55, direction.y));
-    vec3 sky = mix(wash, photo, 0.67);
-    vec3 earth = vec3(0.31, 0.265, 0.22);
+    vec3 photo = texture2D(panorama, vec2(fract(bearing), 0.493 - altitude * 0.43)).rgb;
+    vec3 peach = vec3(0.72, 0.46, 0.34);
+    vec3 blue = vec3(0.19, 0.34, 0.51);
+    vec3 wash = mix(peach, blue, smoothstep(-0.015, 0.25, direction.y));
+    vec3 sky = mix(wash, photo, 0.42);
+    vec3 earth = vec3(0.27, 0.20, 0.15);
     return mix(sky, earth, smoothstep(0.0, 0.85, -direction.y) * 0.87);
   }
 `;
@@ -35,7 +35,21 @@ function addEdgeDistance(geometry: THREE.BufferGeometry) {
   const indices = geometry.getIndex()!;
   const used = new Uint8Array(position.count);
   const distance = new Float32Array(position.count);
-  for (let i = 0; i < indices.count; i++) used[indices.getX(i)] = 1;
+  const boundary = new Uint8Array(position.count);
+  const edges = new Set<number>();
+  for (let i = 0; i < indices.count; i += 3) {
+    const a = indices.getX(i);
+    const b = indices.getX(i + 1);
+    const c = indices.getX(i + 2);
+    used[a] = used[b] = used[c] = 1;
+    for (const [from, to] of [[a, b], [b, c], [c, a]]) {
+      const key = Math.min(from, to) * position.count + Math.max(from, to);
+      if (!edges.delete(key)) edges.add(key);
+    }
+  }
+  for (const edge of edges) {
+    boundary[Math.floor(edge / position.count)] = boundary[edge % position.count] = 1;
+  }
   let width = 1;
   while (position.getZ(width) === position.getZ(0)) width++;
   const height = position.count / width;
@@ -45,7 +59,7 @@ function addEdgeDistance(geometry: THREE.BufferGeometry) {
   function scan(start: number, stride: number, length: number) {
     let steps = 0;
     for (let step = 0, index = start; step < length; step++, index += stride) {
-      if (!used[index]) steps = 0;
+      if (!used[index] || boundary[index]) steps = 0;
       distance[index] = Math.min(distance[index], steps * spacing);
       if (used[index]) steps++;
     }
@@ -71,6 +85,10 @@ export function createRajasthanTerrain(renderer: THREE.WebGLRenderer, scene: THR
   let detailRequested = false;
   let detailLoaded = false;
   let material: THREE.MeshStandardMaterial | undefined;
+  let overview: THREE.Object3D | undefined;
+  let detailModel: THREE.Object3D | undefined;
+  const ray = new THREE.Raycaster();
+  const sunDirection = new THREE.Vector3(-410, 150, 210).normalize();
 
   function own<T extends { dispose: () => void }>(resource: T) {
     if (disposed) resource.dispose();
@@ -104,12 +122,38 @@ export function createRajasthanTerrain(renderer: THREE.WebGLRenderer, scene: THR
         addEdgeDistance(object.geometry);
       }
     });
-    if (!disposed) scene.add(model);
+    if (!disposed) {
+      scene.add(model);
+      model.updateMatrixWorld(true);
+      if (detail) detailModel = model;
+      else overview = model;
+    }
   }
 
-  const sun = new THREE.DirectionalLight('#fff0e1', 2.25);
-  sun.position.set(-410, 210, -255);
-  scene.add(sun, new THREE.HemisphereLight('#e2edff', '#a19888', 1.22));
+  const sun = new THREE.DirectionalLight('#fff1da', 2.75);
+  sun.position.copy(sunDirection);
+  scene.add(sun, sun.target, new THREE.HemisphereLight('#bdcdeb', '#a18a70', 0.79));
+
+  function heightAt(x: number, z: number, fallback: number) {
+    if (!overview) return fallback;
+    ray.set(new THREE.Vector3(x, 20, z), new THREE.Vector3(0, -1, 0));
+    return ray.intersectObject(overview, true)[0]?.point.y ?? fallback;
+  }
+
+  function lightForecourt(anchor: THREE.Vector3, mobile: boolean) {
+    sun.target.position.copy(anchor);
+    sun.position.copy(anchor).addScaledVector(sunDirection, 0.25);
+    const shadow = sun.shadow;
+    shadow.camera.left = shadow.camera.bottom = -0.105;
+    shadow.camera.right = shadow.camera.top = 0.105;
+    shadow.camera.near = 0.06;
+    shadow.camera.far = 0.48;
+    shadow.camera.updateProjectionMatrix();
+    shadow.mapSize.setScalar(mobile ? 512 : 1024);
+    shadow.bias = -0.00012;
+    shadow.normalBias = 0.00018;
+    shadow.autoUpdate = false;
+  }
 
   async function load() {
     const data = fetch(`${ASSETS}/manifest.json`, { signal: requests.signal }).then(async (response) => {
@@ -156,7 +200,7 @@ export function createRajasthanTerrain(renderer: THREE.WebGLRenderer, scene: THR
     material = own(new THREE.MeshStandardMaterial({
       map: albedo,
       normalMap: normal,
-      normalScale: new THREE.Vector2(0.65, 0.65),
+      normalScale: new THREE.Vector2(1.32, 1.32),
       roughness: 0.94,
     }));
     material.onBeforeCompile = (shader) => {
@@ -179,21 +223,24 @@ export function createRajasthanTerrain(renderer: THREE.WebGLRenderer, scene: THR
         .replace('#include <map_fragment>', `#include <map_fragment>
           vec3 masks = texture2D(surfaceMasks, vMapUv).rgb;
           float water = smoothstep(0.12, 0.55, masks.r);
-          float green = smoothstep(0.20, 0.59, masks.b);
+          float green = smoothstep(0.26, 0.61, masks.b);
           vec3 surface = diffuseColor.rgb;
           float value = dot(surface, vec3(0.26, 0.63, 0.11));
-          surface = mix(surface, value * vec3(1.18, 1.035, 0.89), 0.72);
-          surface = mix(surface, value * vec3(0.86, 0.94, 0.72), green * 0.51);
-          diffuseColor.rgb = mix(surface, mix(surface, vec3(0.065, 0.123, 0.131), 0.5), water);
+          surface = mix(surface, value * vec3(1.15, 0.99, 0.79), 0.25);
+          surface = mix(surface, value * vec3(0.74, 0.79, 0.53), green * 0.52);
+          diffuseColor.rgb = mix(surface, vec3(0.018, 0.051, 0.060) + surface * 0.17, water * 0.87);
         `)
         .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-          roughnessFactor = mix(roughnessFactor, 0.31, water);
+          roughnessFactor = mix(roughnessFactor, 0.29, water);
+        `)
+        .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+          normal = normalize(mix(normal, nonPerturbedNormal, water * 0.84));
         `)
         .replace('#include <colorspace_fragment>', `
           vec3 ray = terrain.xyz - cameraPosition;
-          float distanceHaze = smoothstep(240.0, 770.0, length(ray)) *
-            (0.07 + 0.43 * (1.0 - smoothstep(0.03, 0.43, abs(normalize(ray).y))));
-          float edge = 1.0 - smoothstep(4.0, 83.0, terrain.w);
+          float distanceHaze = smoothstep(240.0, 880.0, length(ray)) *
+            (0.025 + 0.21 * (1.0 - smoothstep(0.02, 0.36, abs(normalize(ray).y))));
+          float edge = 1.0 - smoothstep(8.0, 104.0, terrain.w);
           gl_FragColor.rgb = mix(gl_FragColor.rgb, atmosphere(normalize(ray)), max(distanceHaze, edge));
           #include <colorspace_fragment>
         `);
@@ -204,6 +251,14 @@ export function createRajasthanTerrain(renderer: THREE.WebGLRenderer, scene: THR
 
   return {
     load,
+    heightAt,
+    lightForecourt,
+    useDetail(visible: boolean) { if (detailModel) detailModel.visible = visible; },
+    useLocalShadows(visible: boolean) {
+      if (sun.castShadow === visible) return;
+      sun.castShadow = visible;
+      sun.shadow.needsUpdate = visible;
+    },
     get detailLoaded() { return detailLoaded; },
     async loadDetail() {
       if (detailRequested || !material || disposed) return false;
@@ -215,6 +270,7 @@ export function createRajasthanTerrain(renderer: THREE.WebGLRenderer, scene: THR
     dispose() {
       disposed = true;
       requests.abort();
+      sun.shadow.dispose();
       resources.forEach((resource) => resource.dispose());
       resources.clear();
     },
