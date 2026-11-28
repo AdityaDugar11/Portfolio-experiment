@@ -36,7 +36,8 @@ mount = bpy.data.objects.new("Junagarh · geographic placement", None)
 fort.objects.link(mount)
 mount.location = anchor.location
 mount.rotation_euler.z = -.08
-mount.scale = (.40,)*3
+scale = .44
+mount.scale = (scale,)*3
 datum = bpy.data.objects.new("Junagarh · source metre datum", None)
 fort.objects.link(datum)
 datum.parent = mount
@@ -73,6 +74,9 @@ def smooth(t):
 uv = local_xy(xy)
 edge = np.maximum.reduce((-142-uv[:,0],uv[:,0]-53,-15-uv[:,1],uv[:,1]-45))
 construction = 1-smooth(edge/24)
+sculpt = np.load(world/"diorama-phase-03-2/work/sculpt.npz")
+assert not np.any(construction[sculpt["ring"]])
+assert not np.any(construction[len(sculpt["top"]):])
 xyz[:,2] += construction*(anchor.location.z-.045-xyz[:,2])
 mesh.vertices.foreach_set("co",xyz.ravel())
 mesh.update()
@@ -95,7 +99,7 @@ sand = point_field("Sand coverage")
 stone = smooth(point_field("Exposed bedrock")*1.40)
 olive = (1-sand)*smooth((old[:,1]/np.maximum(old[:,0],.025)-.76)/.26)
 rgb = old * (1-olive[:,None]) * [1.05,.80,.54] + old * olive[:,None] * [.73,.94,.50]
-gold = old * [1.03,.74,.35]
+gold = old * [1.04,.76,.41]
 rgb += (gold-rgb)*sand[:,None]
 ironstone = old * [1.05,.77,.60]
 rgb += (ironstone-rgb)*stone[:,None]
@@ -107,7 +111,8 @@ for obj in water_objects:
     pigments = attribute_colors(colors)
     depth = smooth((.207-pigments[:,0])/.176)
     pigments[:,:3] = np.array([.17,.235,.138]) + depth[:,None]*np.array([-.15,-.156,-.135])
-    pigments[:,2] += .074*depth
+    pigments[:,2] += .107*depth
+    pigments[:,1] += .026*depth
     colors.data.foreach_set("color", pigments.ravel())
     counts = Counter(tuple(sorted(e)) for f in obj.data.polygons for e in f.edge_keys)
     rim = sorted({i for edge,num in counts.items() if num==1 for i in edge})
@@ -174,7 +179,7 @@ def ground(x,y):
     return (pos.z,normal.z) if hit else (None,0)
 
 rng = np.random.default_rng(321)
-water_grid = np.load(world/"diorama-phase-03-2/work/sculpt.npz")["wet"]
+water_grid = sculpt["wet"]
 kept_extra = 0
 for obj in bpy.data.collections["03 · Vegetation and stone instances"].objects:
     name = obj.name.partition(" · ")[0]
@@ -248,9 +253,9 @@ overview = bpy.data.objects["01-overview"]
 overview.data.lens = 58
 overview.data.shift_y = -.013
 approach = bpy.data.objects["05-junagarh-approach"]
-approach.data.lens = 41
-approach.location = datum.matrix_world @ Vector((-113,-153,11.8))
-focus = datum.matrix_world @ Vector((-29,3,8.2))
+approach.data.lens = 38
+approach.location = datum.matrix_world @ Vector((-49,-156,14.0))
+focus = datum.matrix_world @ Vector((-34,3,8.0))
 approach.rotation_euler = (focus-approach.location).to_track_quat("-Z","Y").to_euler()
 
 scene.timeline_markers.clear()
@@ -276,7 +281,7 @@ for x in (-.55,0,.55):
     for z in (.85,1.70,2.35):
         origin = datum.matrix_world @ Vector((x,-7,z))
         direction = (datum.matrix_world.to_3x3() @ Vector((0,1,0))).normalized()
-        hit,*result = scene.ray_cast(depsgraph,origin,direction,distance=23.95*.4)
+        hit,*result = scene.ray_cast(depsgraph,origin,direction,distance=23.95*scale)
         assert not hit, (x,z,result)
 print(f"INTEGRATION {len(architecture)} source meshes, {kept_extra} added plants, nine clear gateway rays")
 
