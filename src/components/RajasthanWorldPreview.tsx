@@ -1,888 +1,497 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import gsap from 'gsap';
-import { ArrowLeft, Compass, Layers, MapPin } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { createRajasthanTerrain, type ChapterPoint } from './rajasthanTerrain';
+import './RajasthanWorldPreview.css';
 
-interface ChapterPoint {
-  chapter: number;
-  fort: string;
-  title: string;
-  latitude: number;
-  longitude: number;
-  elevation_dsm_m: number;
-  world_xyz_km: [number, number, number];
+type Journey = 'map' | 'approaching' | 'threshold' | 'returning';
+type Pose = { position: THREE.Vector3; target: THREE.Vector3; fov: number; shiftX: number; shiftY: number };
+type Mark = { anchorX: number; anchorY: number; x: number; y: number };
+
+const number = (chapter: number) => String(chapter).padStart(2, '0');
+const smallWords = new Set(['the', 'into', 'to', 'with']);
+const chapterName = (title: string) => title.toLowerCase().replace(/\b\w+/g, (word, index) =>
+  index > 0 && smallWords.has(word) ? word : word[0].toUpperCase() + word.slice(1),
+);
+const revealEase = gsap.parseEase('sine.inOut');
+const motionQuery = '(prefers-reduced-motion: reduce)';
+const clamp = THREE.MathUtils.clamp;
+
+function pose(position: number[], target: number[], fov: number): Pose {
+  return { position: new THREE.Vector3(...position), target: new THREE.Vector3(...target), fov, shiftX: 0, shiftY: 0 };
 }
 
-interface TerrainManifest {
-  raster_bounds_km: [number, number, number, number];
-  geometry: {
-    overview: { vertices: number; triangles: number };
-    mewar_detail: { vertices: number; triangles: number };
-  };
-  chapters: ChapterPoint[];
+function blend(from: Pose, to: Pose, progress: number, result: Pose) {
+  result.position.lerpVectors(from.position, to.position, progress);
+  result.target.lerpVectors(from.target, to.target, progress);
+  result.fov = THREE.MathUtils.lerp(from.fov, to.fov, progress);
+  result.shiftX = THREE.MathUtils.lerp(from.shiftX, to.shiftX, progress);
+  result.shiftY = THREE.MathUtils.lerp(from.shiftY, to.shiftY, progress);
 }
 
-type CameraStage = 'aerial' | 'map' | 'approach';
-
-interface CameraPose {
-  pos: [number, number, number];
-  target: [number, number, number];
-  fov: number;
+function approachPose(chapter: ChapterPoint, mobile: boolean, width: number, height: number) {
+  const [x, y, z] = chapter.world_xyz_km;
+  const approach = pose([x + 132, y + 139, z + 184], [x - 12, y, z - 11], mobile ? 50 : 38);
+  approach.shiftX = mobile ? 0 : -width * 0.11;
+  approach.shiftY = height * 0.10;
+  return approach;
 }
 
-const ASSET_BASE = '/preview/rajasthan-world';
-
-const DESKTOP_POSES: Record<'aerial' | 'map', CameraPose> = {
-  aerial: {
-    pos: [24, 34, 212],
-    target: [-85, 2.0, 75],
-    fov: 38,
-  },
-  map: {
-    pos: [-42, 465, 365],
-    target: [-26, 0.5, 16],
-    fov: 40,
-  },
-};
-
-const MOBILE_POSES: Record<'aerial' | 'map', CameraPose> = {
-  aerial: {
-    pos: [24, 34, 218],
-    target: [-85, 2.0, 75],
-    fov: 48,
-  },
-  map: {
-    pos: [245, 810, 215],
-    target: [-10, 0.5, 42],
-    fov: 55,
-  },
-};
-
-function getApproachPose(ch: ChapterPoint, isMobile: boolean): CameraPose {
-  const [x, y, z] = ch.world_xyz_km;
-  if (isMobile) {
-    return {
-      pos: [x + 36, y + 54, z + 68],
-      target: [x, y + 0.5, z - 6],
-      fov: 44,
-    };
+function chapterMarks(points: Mark[], width: number, top: number, bottom: number) {
+  const marks = points.map((point) => ({ ...point }));
+  // Amber and Nahargarh share this part of the map. Keep both anchors exact
+  // and give the two labels their own touch-sized space.
+  marks[3].x += 27;
+  marks[9].x -= 27;
+  for (let pass = 0; pass < 12; pass++) {
+    for (let i = 0; i < marks.length; i++) {
+      for (const other of marks.slice(i + 1)) {
+        const mark = marks[i];
+        const dx = mark.x - other.x;
+        const dy = mark.y - other.y;
+        const overlap = 47 - Math.max(Math.abs(dx), Math.abs(dy));
+        if (overlap <= 0) continue;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          mark.x += Math.sign(dx || 1) * overlap * 0.5;
+          other.x -= Math.sign(dx || 1) * overlap * 0.5;
+        } else {
+          mark.y += Math.sign(dy) * overlap * 0.5;
+          other.y -= Math.sign(dy) * overlap * 0.5;
+        }
+      }
+      const mark = marks[i];
+      mark.x = clamp(mark.x, 25, width - 25);
+      mark.y = clamp(mark.y, top + 23, bottom - 23);
+    }
   }
-  return {
-    pos: [x + 32, y + 42, z + 58],
-    target: [x - 4, y + 0.5, z - 4],
-    fov: 38,
-  };
+  return marks;
 }
 
-export const RajasthanWorldPreview: React.FC = () => {
+interface PreviewProps {
+  onExteriorReady?: (chapter: ChapterPoint) => void;
+}
+
+export default function RajasthanWorldPreview({ onExteriorReady }: PreviewProps) {
+  const runwayRef = useRef<HTMLElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const markerRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const leaderRefs = useRef<(SVGLineElement | null)[]>([]);
+  const mapHeadingRef = useRef<HTMLHeadingElement>(null);
+  const thresholdRef = useRef<HTMLHeadingElement>(null);
+  const destinationPinRef = useRef<HTMLDivElement>(null);
+  const approachButtonRef = useRef<HTMLButtonElement>(null);
+  const focusMap = useRef(false);
+  const focusApproach = useRef(false);
+  const journeyRef = useRef<Journey>('map');
+  const chapterRef = useRef<ChapterPoint | null>(null);
+  const travel = useRef({ progress: 0 });
+  const returnAction = useRef<() => void>(() => {});
+  const tweenRef = useRef<gsap.core.Tween | null>(null);
+  const redraw = useRef(() => {});
+  const chaptersRef = useRef<ChapterPoint[]>([]);
+  const [chapters, setChapters] = useState<ChapterPoint[]>([]);
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const [reveal, setReveal] = useState<'opening' | 'scrolling' | 'atlas'>('opening');
+  const [journey, setJourney] = useState<Journey>('map');
+  const [selection, setSelection] = useState<ChapterPoint | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [available, setAvailable] = useState(true);
+  const [error, setError] = useState(false);
 
-  const [manifest, setManifest] = useState<TerrainManifest | null>(null);
-  const [stage, setStage] = useState<CameraStage>('aerial');
-  const [selectedChapter, setSelectedChapter] = useState<number>(1);
-  const [hoveredChapter, setHoveredChapter] = useState<number | null>(null);
-  const [detailLoaded, setDetailLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth < 768 : false
-  );
+  function changeJourney(next: Journey) {
+    journeyRef.current = next;
+    setJourney(next);
+  }
 
-  const stageRef = useRef<CameraStage>('aerial');
-  const selectedRef = useRef<number>(1);
-  const manifestRef = useRef<TerrainManifest | null>(null);
-  const isMobileRef = useRef<boolean>(isMobile);
+  function showAtlas() {
+    focusMap.current = true;
+    const runway = runwayRef.current!;
+    const distance = runway.offsetHeight - viewportRef.current!.offsetHeight;
+    window.scrollTo({ top: distance, behavior: matchMedia(motionQuery).matches ? 'instant' : 'smooth' });
+    if (reveal === 'atlas') {
+      mapHeadingRef.current?.focus({ preventScroll: true });
+      focusMap.current = false;
+    }
+  }
 
-  const camStateRef = useRef({
-    pos: new THREE.Vector3(...(isMobile ? MOBILE_POSES.aerial.pos : DESKTOP_POSES.aerial.pos)),
-    target: new THREE.Vector3(...(isMobile ? MOBILE_POSES.aerial.target : DESKTOP_POSES.aerial.target)),
-    fov: isMobile ? MOBILE_POSES.aerial.fov : DESKTOP_POSES.aerial.fov,
-    orbitYaw: 0,
-    orbitPitch: 0,
-    zoomOffset: 0,
+  function select(chapter: ChapterPoint, keyboard: boolean) {
+    if (keyboard && chapterRef.current === chapter) {
+      approachButtonRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    focusApproach.current = keyboard;
+    chapterRef.current = chapter;
+    setSelection(chapter);
+  }
+
+  function beginApproach() {
+    const chapter = chapterRef.current;
+    if (!chapter || journeyRef.current !== 'map') return;
+    changeJourney('approaching');
+    tweenRef.current = gsap.to(travel.current, {
+      progress: 1,
+      duration: matchMedia(motionQuery).matches || !available ? 0 : 1.45,
+      ease: 'power2.inOut',
+      onUpdate: redraw.current,
+      onComplete: () => {
+        changeJourney('threshold');
+        onExteriorReady?.(chapter);
+      },
+    });
+  }
+
+  function returnToMap() {
+    if (journeyRef.current === 'returning') return;
+    tweenRef.current?.kill();
+    changeJourney('returning');
+    tweenRef.current = gsap.to(travel.current, {
+      progress: 0,
+      duration: matchMedia(motionQuery).matches || !available ? 0 : 1.05,
+      ease: 'power2.inOut',
+      onUpdate: redraw.current,
+      onComplete: () => changeJourney('map'),
+    });
+  }
+
+  useEffect(() => {
+    returnAction.current = returnToMap;
   });
 
-  const activeTweenRef = useRef<gsap.core.Tween | null>(null);
+  useEffect(() => {
+    if (reveal === 'atlas' && focusMap.current) {
+      mapHeadingRef.current?.focus({ preventScroll: true });
+      focusMap.current = false;
+    }
+  }, [reveal]);
 
   useEffect(() => {
-    stageRef.current = stage;
-  }, [stage]);
+    if (focusApproach.current) {
+      approachButtonRef.current?.focus({ preventScroll: true });
+      focusApproach.current = false;
+    }
+  }, [selection]);
 
   useEffect(() => {
-    selectedRef.current = selectedChapter;
-  }, [selectedChapter]);
+    if (journey === 'threshold') {
+      redraw.current();
+      thresholdRef.current?.focus({ preventScroll: true });
+    }
+    if (journey === 'map') approachButtonRef.current?.focus({ preventScroll: true });
+  }, [journey]);
 
   useEffect(() => {
-    manifestRef.current = manifest;
-  }, [manifest]);
+    const runway = runwayRef.current!;
+    const viewport = viewportRef.current!;
+    const container = mountRef.current!;
+    const reducedMotion = matchMedia(motionQuery);
+    const debug = new URLSearchParams(window.location.search).has('debug');
+    let renderer: THREE.WebGLRenderer | undefined;
+    let world: ReturnType<typeof createRajasthanTerrain> | undefined;
+    let stopped = false;
+    let frame = 0;
+    let progress = 0;
+    let width = 1;
+    let height = 1;
+    let mobile = false;
+    let opening = pose([], [], 40);
+    let atlas = pose([], [], 40);
+    const current = pose([], [], 40);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 3600);
+    const debugWindow = window as Window & { __rajasthanWorldStats?: object };
+    let draws = 0;
+    let adapter = '';
 
-  useEffect(() => {
-    const onResize = () => {
-      const mobile = window.innerWidth < 768;
-      isMobileRef.current = mobile;
-      setIsMobile(mobile);
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  const animateToPose = useCallback((pose: CameraPose, duration = 1.65) => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const dur = reducedMotion ? 0.01 : duration;
-
-    if (activeTweenRef.current) {
-      activeTweenRef.current.kill();
+    function applyPose(view: Pose) {
+      camera.position.copy(view.position);
+      camera.lookAt(view.target);
+      camera.fov = view.fov;
+      camera.setViewOffset(width, height, view.shiftX, view.shiftY, width, height);
+      camera.updateMatrixWorld();
     }
 
-    const st = camStateRef.current;
-    const start = {
-      px: st.pos.x,
-      py: st.pos.y,
-      pz: st.pos.z,
-      tx: st.target.x,
-      ty: st.target.y,
-      tz: st.target.z,
-      fov: st.fov,
-      yaw: st.orbitYaw,
-      pitch: st.orbitPitch,
-      zoom: st.zoomOffset,
-    };
+    function project(chapter: ChapterPoint): Mark {
+      const projected = new THREE.Vector3(...chapter.world_xyz_km).project(camera);
+      const x = (projected.x + 1) * width / 2;
+      const y = (1 - projected.y) * height / 2;
+      return { anchorX: x, anchorY: y, x, y };
+    }
 
-    activeTweenRef.current = gsap.to(start, {
-      px: pose.pos[0],
-      py: pose.pos[1],
-      pz: pose.pos[2],
-      tx: pose.target[0],
-      ty: pose.target[1],
-      tz: pose.target[2],
-      fov: pose.fov,
-      yaw: 0,
-      pitch: 0,
-      zoom: 0,
-      duration: dur,
-      ease: 'power3.inOut',
-      onUpdate: () => {
-        st.pos.set(start.px, start.py, start.pz);
-        st.target.set(start.tx, start.ty, start.tz);
-        st.fov = start.fov;
-        st.orbitYaw = start.yaw;
-        st.orbitPitch = start.pitch;
-        st.zoomOffset = start.zoom;
-      },
-    });
-  }, []);
-
-  const enterMap = useCallback(() => {
-    setStage('map');
-    const poses = isMobileRef.current ? MOBILE_POSES : DESKTOP_POSES;
-    animateToPose(poses.map, 1.8);
-  }, [animateToPose]);
-
-  const selectAndApproach = useCallback(
-    (chapterNum: number) => {
-      setSelectedChapter(chapterNum);
-      const m = manifestRef.current;
-      if (!m) return;
-      const ch = m.chapters.find((c) => c.chapter === chapterNum);
-      if (!ch) return;
-      setStage('approach');
-      animateToPose(getApproachPose(ch, isMobileRef.current), 1.65);
-    },
-    [animateToPose]
-  );
-
-  const returnToMap = useCallback(() => {
-    setStage('map');
-    const poses = isMobileRef.current ? MOBILE_POSES : DESKTOP_POSES;
-    animateToPose(poses.map, 1.55);
-  }, [animateToPose]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && stageRef.current === 'approach') {
-        returnToMap();
-      } else if ((e.key === 'Enter' || e.key === ' ') && stageRef.current === 'aerial') {
-        if (document.activeElement === document.body) {
-          e.preventDefault();
-          enterMap();
-        }
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-        if (stageRef.current !== 'aerial') {
-          e.preventDefault();
-          const next = (selectedRef.current % 10) + 1;
-          selectAndApproach(next);
-        }
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        if (stageRef.current !== 'aerial') {
-          e.preventDefault();
-          const prev = ((selectedRef.current - 2 + 10) % 10) + 1;
-          selectAndApproach(prev);
-        }
+    function render() {
+      frame = 0;
+      if (!renderer) return;
+      const start = performance.now();
+      const revealProgress = reducedMotion.matches ? Number(progress >= 0.985) : revealEase(progress);
+      blend(opening, atlas, revealProgress, current);
+      if (chapterRef.current && travel.current.progress) {
+        blend(atlas, approachPose(chapterRef.current, mobile, width, height), travel.current.progress, current);
       }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [enterMap, returnToMap, selectAndApproach]);
-
-  // Main Three.js scene setup
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
-
-    let disposed = false;
-    let rafId = 0;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#221715');
-
-    const camera = new THREE.PerspectiveCamera(
-      camStateRef.current.fov,
-      container.clientWidth / Math.max(container.clientHeight, 1),
-      0.2,
-      2800
-    );
-
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: 'high-performance',
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.06;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    container.appendChild(renderer.domElement);
-
-    // Sky dome with warm Rajasthan sunset gradient matching Page 01 palette
-    const skyGeo = new THREE.SphereGeometry(1800, 32, 20);
-    const skyMat = new THREE.ShaderMaterial({
-      side: THREE.BackSide,
-      depthWrite: false,
-      uniforms: {
-        uHorizon: { value: new THREE.Color('#E6C2AA') },
-        uMidSky: { value: new THREE.Color('#7C6B72') },
-        uZenith: { value: new THREE.Color('#21191C') },
-        uSunDir: { value: new THREE.Vector3(-0.82, 0.19, -0.54).normalize() },
-        uSunColor: { value: new THREE.Color('#FFE8CC') },
-      },
-      vertexShader: /* glsl */ `
-        varying vec3 vWorldDir;
-        void main() {
-          vec4 wp = modelMatrix * vec4(position, 1.0);
-          vWorldDir = normalize(position);
-          gl_Position = projectionMatrix * viewMatrix * wp;
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        uniform vec3 uHorizon;
-        uniform vec3 uMidSky;
-        uniform vec3 uZenith;
-        uniform vec3 uSunDir;
-        uniform vec3 uSunColor;
-        varying vec3 vWorldDir;
-        void main() {
-          vec3 dir = normalize(vWorldDir);
-          float h = clamp(dir.y, 0.0, 1.0);
-          vec3 col = mix(uHorizon, uMidSky, smoothstep(0.0, 0.22, h));
-          col = mix(col, uZenith, smoothstep(0.20, 0.72, h));
-          float sunDot = max(dot(dir, uSunDir), 0.0);
-          col += uSunColor * pow(sunDot, 22.0) * 0.42;
-          col += uSunColor * pow(sunDot, 220.0) * 0.75;
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `,
-    });
-    const skyDome = new THREE.Mesh(skyGeo, skyMat);
-    scene.add(skyDome);
-
-    // Warm low-angle western sunlight + sky hemisphere fill
-    const sunLight = new THREE.DirectionalLight('#FFF0DC', 2.45);
-    sunLight.position.set(-480, 145, -310);
-    scene.add(sunLight);
-
-    const hemiLight = new THREE.HemisphereLight('#F2D5BE', '#3A2A22', 0.95);
-    scene.add(hemiLight);
-
-    const rimLight = new THREE.DirectionalLight('#9BAAC2', 0.38);
-    rimLight.position.set(320, 180, 260);
-    scene.add(rimLight);
-
-    // Helper to build atmospheric terrain material with water sheen + smooth horizon edge fade
-    const createTerrainMaterial = (
-      albedoTex: THREE.Texture,
-      normalTex: THREE.Texture,
-      maskTex: THREE.Texture | null,
-      bounds: [number, number, number, number],
-      isDetailPatch = false
-    ) => {
-      const mat = new THREE.MeshStandardMaterial({
-        map: albedoTex,
-        normalMap: normalTex,
-        normalScale: new THREE.Vector2(isDetailPatch ? 1.15 : 1.05, isDetailPatch ? 1.15 : 1.05),
-        roughness: 0.9,
-        metalness: 0.02,
-      });
-
-      mat.onBeforeCompile = (shader) => {
-        shader.uniforms.uMaskTex = { value: maskTex };
-        shader.uniforms.uHasMask = { value: maskTex ? 1.0 : 0.0 };
-        shader.uniforms.uBounds = { value: new THREE.Vector4(...bounds) };
-        shader.uniforms.uHorizonColor = { value: new THREE.Color('#E2BFA8') };
-        shader.uniforms.uIsDetail = { value: isDetailPatch ? 1.0 : 0.0 };
-
-        shader.vertexShader = shader.vertexShader
-          .replace(
-            '#include <common>',
-            `#include <common>
-            varying vec3 vTerrainWorldPos;`
-          )
-          .replace(
-            '#include <worldpos_vertex>',
-            `#include <worldpos_vertex>
-            vTerrainWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`
-          );
-
-        shader.fragmentShader = shader.fragmentShader
-          .replace(
-            '#include <common>',
-            `#include <common>
-            uniform sampler2D uMaskTex;
-            uniform float uHasMask;
-            uniform vec4 uBounds;
-            uniform vec3 uHorizonColor;
-            uniform float uIsDetail;
-            varying vec3 vTerrainWorldPos;`
-          )
-          .replace(
-            '#include <roughnessmap_fragment>',
-            `#include <roughnessmap_fragment>
-            float waterMask = 0.0;
-            float stateMask = 1.0;
-            if (uHasMask > 0.5) {
-              vec2 mUv = vec2(
-                (vTerrainWorldPos.x - uBounds.x) / (uBounds.z - uBounds.x),
-                1.0 - ((-vTerrainWorldPos.z) - uBounds.y) / (uBounds.w - uBounds.y)
-              );
-              vec3 mSample = texture2D(uMaskTex, clamp(mUv, 0.0, 1.0)).rgb;
-              waterMask = mSample.r;
-              stateMask = mSample.g;
-              roughnessFactor = mix(roughnessFactor, 0.24, smoothstep(0.2, 0.75, waterMask));
-            }`
-          )
-          .replace(
-            '#include <dithering_fragment>',
-            `
-            // Subtle warm atmospheric haze by distance (restrained so relief stays crisp)
-            float camDist = length(cameraPosition - vTerrainWorldPos);
-            float haze = smoothstep(320.0, 1500.0, camDist) * 0.48;
-
-            // Smooth perimeter blend so the terrain never reads as a floating rectangle
-            float northCoord = -vTerrainWorldPos.z;
-            float edgeX = min(vTerrainWorldPos.x - uBounds.x, uBounds.z - vTerrainWorldPos.x);
-            float edgeY = min(northCoord - uBounds.y, uBounds.w - northCoord);
-            float edgeFade = 1.0 - smoothstep(28.0, 175.0, min(edgeX, edgeY));
-            if (uIsDetail > 0.5) {
-              edgeFade = 0.0;
-            } else {
-              // Subtle softening outside Rajasthan administrative outline
-              gl_FragColor.rgb = mix(gl_FragColor.rgb * 0.92 + vec3(0.03, 0.025, 0.02), gl_FragColor.rgb, mix(0.65, 1.0, stateMask));
-            }
-
-            float finalFog = clamp(max(haze, edgeFade), 0.0, 0.96);
-            gl_FragColor.rgb = mix(gl_FragColor.rgb, uHorizonColor, finalFog);
-            #include <dithering_fragment>
-            `
-          );
-      };
-      return mat;
-    };
-
-    const texLoader = new THREE.TextureLoader();
-    const gltfLoader = new GLTFLoader();
-    const loadedDisposables: Array<{ dispose: () => void }> = [skyGeo, skyMat];
-
-    const loadTex = (url: string, srgb: boolean) =>
-      new Promise<THREE.Texture>((resolve, reject) => {
-        texLoader.load(
-          url,
-          (t) => {
-            t.flipY = false;
-            t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-            t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-            loadedDisposables.push(t);
-            resolve(t);
-          },
-          undefined,
-          reject
-        );
-      });
-
-    let overviewGroup: THREE.Object3D | null = null;
-    let mewarGroup: THREE.Object3D | null = null;
-
-    const initAssets = async () => {
-      try {
-        const res = await fetch(`${ASSET_BASE}/manifest.json`);
-        if (!res.ok) throw new Error(`Manifest HTTP ${res.status}`);
-        const data: TerrainManifest = await res.json();
-        if (disposed) return;
-        setManifest(data);
-
-        const [albedoTex, normalTex, maskTex, gltf] = await Promise.all([
-          loadTex(`${ASSET_BASE}/surface-warm.webp`, true),
-          loadTex(`${ASSET_BASE}/relief-normal.webp`, false),
-          loadTex(`${ASSET_BASE}/surface-masks.webp`, false),
-          gltfLoader.loadAsync(`${ASSET_BASE}/rajasthan-overview.glb`),
-        ]);
-        if (disposed) return;
-
-        const terrainMat = createTerrainMaterial(
-          albedoTex,
-          normalTex,
-          maskTex,
-          data.raster_bounds_km,
-          false
-        );
-        loadedDisposables.push(terrainMat);
-
-        gltf.scene.traverse((obj) => {
-          if ((obj as THREE.Mesh).isMesh) {
-            const m = obj as THREE.Mesh;
-            m.material = terrainMat;
-            loadedDisposables.push(m.geometry);
-          }
-        });
-        overviewGroup = gltf.scene;
-        scene.add(overviewGroup);
-        setIsLoading(false);
-
-        // Lazy-load the Mewar/Aravalli higher-resolution terrain mesh after overview is interactive
-        gltfLoader
-          .loadAsync(`${ASSET_BASE}/mewar-detail.glb`)
-          .then((mGltf) => {
-            if (disposed) return;
-            mGltf.scene.traverse((obj) => {
-              if ((obj as THREE.Mesh).isMesh) {
-                const m = obj as THREE.Mesh;
-                m.material = terrainMat;
-                m.position.y += 0.03;
-                loadedDisposables.push(m.geometry);
-              }
-            });
-            mewarGroup = mGltf.scene;
-            scene.add(mewarGroup);
-            setDetailLoaded(true);
-          })
-          .catch((err) => {
-            console.warn('Lazy Mewar detail load skipped:', err);
-          });
-      } catch (err) {
-        if (!disposed) {
-          setLoadError(err instanceof Error ? err.message : 'Failed to load terrain assets');
-          setIsLoading(false);
-        }
+      applyPose(current);
+      if (chapterRef.current && destinationPinRef.current) {
+        const point = project(chapterRef.current);
+        destinationPinRef.current.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%)`;
       }
-    };
-
-    initAssets();
-
-    // Gentle pointer drag orbit + wheel zoom/stage transition
-    let dragging = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    const onPointerDown = (e: PointerEvent) => {
-      if ((e.target as HTMLElement)?.closest('button')) return;
-      dragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (!dragging || stageRef.current === 'aerial') return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      camStateRef.current.orbitYaw = THREE.MathUtils.clamp(
-        camStateRef.current.orbitYaw - dx * 0.0022,
-        -0.42,
-        0.42
-      );
-      camStateRef.current.orbitPitch = THREE.MathUtils.clamp(
-        camStateRef.current.orbitPitch - dy * 0.0018,
-        -0.25,
-        0.22
-      );
-    };
-
-    const onPointerUp = () => {
-      dragging = false;
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      if (stageRef.current === 'aerial' && e.deltaY > 12) {
-        enterMap();
-        return;
-      }
-      if (stageRef.current === 'approach' && e.deltaY < -36) {
-        returnToMap();
-        return;
-      }
-      if (stageRef.current === 'map') {
-        camStateRef.current.zoomOffset = THREE.MathUtils.clamp(
-          camStateRef.current.zoomOffset + e.deltaY * 0.12,
-          -140,
-          120
-        );
-      }
-    };
-
-    const dom = renderer.domElement;
-    dom.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    dom.addEventListener('wheel', onWheel, { passive: false });
-
-    const onResize = () => {
-      if (!container) return;
-      const w = container.clientWidth;
-      const h = Math.max(container.clientHeight, 1);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener('resize', onResize);
-
-    // Frame loop: update camera, project 10 fort coordinates without React re-renders
-    const projVec = new THREE.Vector3();
-    const offsetVec = new THREE.Vector3();
-    let frameCount = 0;
-    let fpsTimer = performance.now();
-    let currentFps = 60;
-
-    const animate = () => {
-      if (disposed) return;
-      rafId = requestAnimationFrame(animate);
-
-      const st = camStateRef.current;
-      offsetVec.copy(st.pos).sub(st.target);
-      if (st.orbitYaw !== 0 || st.orbitPitch !== 0 || st.zoomOffset !== 0) {
-        const sph = new THREE.Spherical().setFromVector3(offsetVec);
-        sph.theta += st.orbitYaw;
-        sph.phi = THREE.MathUtils.clamp(sph.phi + st.orbitPitch, 0.22, 1.38);
-        sph.radius = Math.max(45, sph.radius + st.zoomOffset);
-        offsetVec.setFromSpherical(sph);
-      }
-      camera.position.copy(st.target).add(offsetVec);
-      camera.lookAt(st.target);
-      if (Math.abs(camera.fov - st.fov) > 0.01) {
-        camera.fov = st.fov;
-        camera.updateProjectionMatrix();
-      }
-
       renderer.render(scene, camera);
-
-      // Project all 10 chapters to screen space
-      const m = manifestRef.current;
-      if (m && stageRef.current !== 'aerial') {
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        const screenPts = m.chapters.map((ch) => {
-          projVec.set(ch.world_xyz_km[0], ch.world_xyz_km[1], ch.world_xyz_km[2]);
-          projVec.project(camera);
-          return {
-            x: (projVec.x * 0.5 + 0.5) * w,
-            y: (-projVec.y * 0.5 + 0.5) * h,
-            visible: projVec.z < 1 && projVec.z > -1,
-          };
-        });
-
-        // Separate nearby Jaipur pair (Ch 04 Amber & Ch 10 Nahargarh)
-        const p4 = screenPts[3];
-        const p10 = screenPts[9];
-        const amberHigher = p4 && p10 ? p4.y < p10.y : true;
-
-        screenPts.forEach((pt, idx) => {
-          const btn = markerRefs.current[idx];
-          const line = leaderRefs.current[idx];
-          if (!btn) return;
-          if (!pt.visible || pt.x < -30 || pt.x > w + 30 || pt.y < -30 || pt.y > h + 30) {
-            btn.style.opacity = '0';
-            btn.style.pointerEvents = 'none';
-            if (line) line.setAttribute('opacity', '0');
-            return;
-          }
-
-          let ux = pt.x;
-          let uy = pt.y;
-          if (idx === 3 || idx === 9) {
-            const sep = isMobileRef.current ? 18 : 20;
-            const sign = (idx === 3) === amberHigher ? -1 : 1;
-            ux += idx === 3 ? 16 : -16;
-            uy += sign * sep;
-            if (line) {
-              line.setAttribute('x1', pt.x.toFixed(1));
-              line.setAttribute('y1', pt.y.toFixed(1));
-              line.setAttribute('x2', ux.toFixed(1));
-              line.setAttribute('y2', uy.toFixed(1));
-              line.setAttribute('opacity', '0.85');
-            }
-          } else if (line) {
-            line.setAttribute('opacity', '0');
-          }
-
-          btn.style.opacity = '1';
-          btn.style.pointerEvents = 'auto';
-          btn.style.transform = `translate3d(${ux.toFixed(1)}px, ${uy.toFixed(1)}px, 0) translate(-50%, -50%)`;
-        });
-      }
-
-      frameCount++;
-      const now = performance.now();
-      if (now - fpsTimer >= 500) {
-        currentFps = Math.round((frameCount * 1000) / (now - fpsTimer));
-        frameCount = 0;
-        fpsTimer = now;
-        (window as unknown as Record<string, unknown>).__rajasthanWorldStats = {
-          fps: currentFps,
-          drawCalls: renderer.info.render.calls,
-          triangles: renderer.info.render.triangles,
-          stage: stageRef.current,
-          selectedChapter: selectedRef.current,
-          detailLoaded: Boolean(mewarGroup),
+      if (debug) {
+        debugWindow.__rajasthanWorldStats = {
+          renderer: adapter,
+          draws: ++draws, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
+          submitMs: performance.now() - start, progress, position: camera.position.toArray(), detailLoaded: world?.detailLoaded,
         };
       }
-    };
+    }
 
-    rafId = requestAnimationFrame(animate);
+    function requestDraw() {
+      if (!frame && renderer && !document.hidden) frame = requestAnimationFrame(render);
+    }
+    redraw.current = requestDraw;
+
+    function size() {
+      width = viewport.clientWidth;
+      height = viewport.clientHeight;
+      mobile = width < 700;
+      renderer?.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.35 : 1.5));
+      renderer?.setSize(width, height);
+      opening = mobile
+        ? pose([10, 56, 217], [-100, 19, 57], 48)
+        : pose([24, 51, 227], [-96, 17, 54], 38);
+      atlas = mobile
+        ? pose([303, 586, 292], [-22, 0, 17], 48)
+        : pose([-75, 458, 407], [-22, 0, 17], 40);
+
+      if (chaptersRef.current.length && renderer) {
+        const dockHeight = mobile ? 235 : 156;
+        const top = mobile ? 131 : 146;
+        const bottom = height - dockHeight;
+        const offset = atlas.position.clone().sub(atlas.target);
+        for (let attempt = 0; attempt < 8; attempt++) {
+          applyPose(atlas);
+          const points = chaptersRef.current.map(project);
+          const minX = Math.min(...points.map(({ x }) => x));
+          const maxX = Math.max(...points.map(({ x }) => x));
+          const minY = Math.min(...points.map(({ y }) => y));
+          const maxY = Math.max(...points.map(({ y }) => y));
+          const scale = Math.max(
+            (maxX - minX) / (width - (mobile ? 108 : 170)),
+            (maxY - minY) / Math.max(90, bottom - top - 40),
+          );
+          if (scale > 1.005) {
+            atlas.position.copy(atlas.target).add(offset.multiplyScalar(scale));
+            continue;
+          }
+          atlas.shiftX = (minX + maxX - width) / 2;
+          atlas.shiftY = (minY + maxY - top - bottom) / 2;
+          break;
+        }
+        applyPose(atlas);
+        setMarks(chapterMarks(chaptersRef.current.map(project), width, top - 15, bottom + 6));
+      }
+      requestDraw();
+    }
+
+    function scroll() {
+      const distance = Math.max(1, runway.offsetHeight - viewport.offsetHeight);
+      progress = clamp(-runway.getBoundingClientRect().top / distance, 0, 1);
+      setReveal(progress >= 0.985 ? 'atlas' : progress < 0.72 ? 'opening' : 'scrolling');
+      viewport.style.setProperty('--opening-opacity', String(1 - clamp(progress / 0.72, 0, 1)));
+      if (progress < 0.985 && journeyRef.current !== 'map') {
+        tweenRef.current?.kill();
+        travel.current.progress = 0;
+        changeJourney('map');
+      }
+      if (progress > 0.45 && world) {
+        void world.loadDetail().then((loaded) => {
+          if (loaded) requestDraw();
+        }).catch((reason) => { if (debug) console.warn('Mewar terrain unavailable', reason); });
+      }
+      requestDraw();
+    }
+
+    function escape(event: KeyboardEvent) {
+      if (event.key === 'Escape' && journeyRef.current !== 'map') returnAction.current();
+    }
+
+    function contextLost(event: Event) {
+      event.preventDefault();
+      changeJourney('map');
+      tweenRef.current?.kill();
+      travel.current.progress = 0;
+      setAvailable(false);
+    }
+
+    function contextRestored() {
+      setAvailable(true);
+      size();
+    }
+
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      if (debug) {
+        const gl = renderer.getContext();
+        const extension = gl.getExtension('WEBGL_debug_renderer_info');
+        adapter = extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+      }
+      renderer.domElement.addEventListener('webglcontextlost', contextLost);
+      renderer.domElement.addEventListener('webglcontextrestored', contextRestored);
+      container.appendChild(renderer.domElement);
+      world = createRajasthanTerrain(renderer, scene);
+    } catch {
+      setAvailable(false);
+    }
+
+    async function prepare() {
+      try {
+        const data = await (world ? world.load() : fetch('/preview/rajasthan-world/manifest.json').then((response) => {
+          if (!response.ok) throw new Error('Terrain manifest unavailable');
+          return response.json() as Promise<{ chapters: ChapterPoint[] }>;
+        }));
+        if (stopped) return;
+        chaptersRef.current = data.chapters;
+        setChapters(data.chapters);
+        setLoading(false);
+        size();
+        scroll();
+      } catch (reason) {
+        if (stopped) return;
+        if (debug) console.error(reason);
+        setLoading(false);
+        setError(true);
+      }
+    }
+
+    const observer = new ResizeObserver(() => { size(); scroll(); });
+    observer.observe(viewport);
+    window.addEventListener('scroll', scroll, { passive: true });
+    window.addEventListener('keydown', escape);
+    document.addEventListener('visibilitychange', requestDraw);
+    reducedMotion.addEventListener('change', scroll);
+    void prepare();
+    size();
+    scroll();
 
     return () => {
-      disposed = true;
-      cancelAnimationFrame(rafId);
-      if (activeTweenRef.current) activeTweenRef.current.kill();
-      dom.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      dom.removeEventListener('wheel', onWheel);
-      window.removeEventListener('resize', onResize);
-      loadedDisposables.forEach((d) => d.dispose());
-      renderer.dispose();
-      if (dom.parentNode === container) {
-        container.removeChild(dom);
-      }
+      stopped = true;
+      tweenRef.current?.kill();
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('scroll', scroll);
+      window.removeEventListener('keydown', escape);
+      document.removeEventListener('visibilitychange', requestDraw);
+      reducedMotion.removeEventListener('change', scroll);
+      world?.dispose();
+      renderer?.domElement.removeEventListener('webglcontextlost', contextLost);
+      renderer?.domElement.removeEventListener('webglcontextrestored', contextRestored);
+      renderer?.dispose();
+      renderer?.domElement.remove();
+      delete debugWindow.__rajasthanWorldStats;
     };
-  }, [enterMap, returnToMap]);
+  }, []);
 
-  const activeData = manifest?.chapters.find((c) => c.chapter === selectedChapter) ?? null;
+  const atlasVisible = reveal === 'atlas' && journey === 'map' && !loading && !error;
+  const travelling = journey !== 'map';
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#181210] text-[#FAF7F2] select-none">
-      {/* Three.js Canvas Mount */}
-      <div ref={mountRef} className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" />
+    <main className="rw" ref={runwayRef}>
+      <div className="rw-viewport" ref={viewportRef} data-stage={travelling ? journey : reveal} data-terrain={available}>
+        <div className="rw-canvas" ref={mountRef} aria-hidden="true" />
+        <div className="rw-light" aria-hidden="true" />
+        <header className="rw-header">
+          <a href="/"><ArrowLeft size={15} /> Introduction</a>
+          <span>The Living Signal</span>
+        </header>
 
-      {/* Leader lines for separated Jaipur pair (Ch 04 & Ch 10) */}
-      {stage !== 'aerial' && manifest && (
-        <svg
-          className="pointer-events-none absolute inset-0 w-full h-full z-10"
-          aria-hidden="true"
-        >
-          {manifest.chapters.map((ch, idx) => (
-            <line
-              key={ch.chapter}
-              ref={(el) => {
-                leaderRefs.current[idx] = el;
-              }}
-              stroke="#FAF7F2"
-              strokeWidth="1.2"
-              strokeDasharray="2 2"
-              opacity="0"
-            />
-          ))}
-        </svg>
-      )}
+        {loading && <p className="rw-status" role="status">Loading Rajasthan terrain…</p>}
+        {error && <div className="rw-status" role="alert">
+          <p>The Rajasthan terrain could not be loaded.</p>
+          <button className="rw-link" onClick={() => window.location.reload()}>Reload terrain <ArrowRight size={16} /></button>
+        </div>}
 
-      {/* Projected 3D Chapter Markers */}
-      {stage !== 'aerial' && manifest && (
-        <div className="pointer-events-none absolute inset-0 z-20" role="navigation" aria-label="Rajasthan Fort Chapters">
-          {manifest.chapters.map((ch, idx) => {
-            const isSelected = selectedChapter === ch.chapter;
-            const isHovered = hoveredChapter === ch.chapter;
-            const isPrimary = ch.chapter === 1;
-            const emphasized = isSelected || isHovered;
-            return (
-              <button
-                key={ch.chapter}
-                ref={(el) => {
-                  markerRefs.current[idx] = el;
-                }}
-                type="button"
-                onClick={() => selectAndApproach(ch.chapter)}
-                onMouseEnter={() => setHoveredChapter(ch.chapter)}
-                onMouseLeave={() => setHoveredChapter(null)}
-                onFocus={() => setHoveredChapter(ch.chapter)}
-                onBlur={() => setHoveredChapter(null)}
-                aria-label={`Chapter ${String(ch.chapter).padStart(2, '0')} — ${ch.fort}: ${ch.title}`}
-                aria-pressed={isSelected}
-                style={{ opacity: 0 }}
-                className="pointer-events-auto absolute top-0 left-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4B896] rounded-full"
-              >
-                <span className="relative flex items-center">
-                  <span
-                    className={`flex items-center justify-center rounded-full font-semibold tracking-wider transition-all duration-200 shadow-lg ${
-                      emphasized
-                        ? 'w-8 h-8 text-xs bg-[#2A1B16] text-[#FAF7F2] ring-2 ring-[#E06D53] scale-110'
-                        : isPrimary
-                          ? 'w-7 h-7 text-[11px] bg-[#2A1B16]/95 text-[#FAF7F2] ring-2 ring-[#F4B896]/90'
-                          : 'w-6 h-6 text-[10px] bg-[#2A1B16]/88 text-[#FAF7F2]/90 ring-1 ring-[#FAF7F2]/65 hover:ring-[#F4B896]'
-                    }`}
-                  >
-                    {String(ch.chapter).padStart(2, '0')}
-                  </span>
+        {!loading && !error && reveal === 'opening' && (
+          <section className="rw-opening">
+            <h1>Rajasthan</h1>
+            <p>From the Aravalli ridges to the Thar plains</p>
+            <button className="rw-link" onClick={showAtlas}><ArrowDown size={17} /> Explore the chapter map</button>
+          </section>
+        )}
 
-                  {/* Chapter 01 persistent callout in Map/Approach; hover callout for others */}
-                  {(isPrimary || emphasized) && !isMobile && (
-                    <span
-                      className={`ml-2.5 px-2.5 py-1 rounded bg-[#181210]/82 backdrop-blur-sm border text-left whitespace-nowrap transition-opacity ${
-                        isSelected
-                          ? 'border-[#E06D53]/80 text-[#FAF7F2]'
-                          : 'border-[#FAF7F2]/20 text-[#FAF7F2]/90'
-                      }`}
-                    >
-                      <span className="block text-[11px] font-medium leading-tight tracking-wide">
-                        {String(ch.chapter).padStart(2, '0')} — {ch.fort}
-                      </span>
-                      <span className="block text-[9px] uppercase tracking-[0.18em] text-[#F4B896]">
-                        {ch.title}
-                      </span>
-                    </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Top Bar HUD */}
-      <header className="pointer-events-none absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3.5 md:px-8 md:py-5">
-        <div className="pointer-events-auto flex items-center gap-3">
-          <a
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#181210]/75 hover:bg-[#181210]/95 border border-[#FAF7F2]/18 px-3 py-1.5 text-xs tracking-wider uppercase text-[#FAF7F2]/85 transition"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#F4B896]" />
-            <span>Page 01</span>
-          </a>
-          <span className="hidden sm:inline-block text-[11px] uppercase tracking-[0.22em] text-[#FAF7F2]/75">
-            The Living Signal · Map Phase 02 Preview
-          </span>
-        </div>
-
-        <div className="pointer-events-auto flex items-center gap-2">
-          {detailLoaded && (
-            <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[#181210]/70 border border-[#FAF7F2]/15 px-3 py-1 text-[11px] text-[#F4B896]/90">
-              <Layers className="w-3 h-3" />
-              Mewar LOD active
-            </span>
-          )}
-          {stage === 'approach' && (
-            <button
-              type="button"
-              onClick={returnToMap}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#E06D53] hover:bg-[#d25d43] text-[#FAF7F2] px-3.5 py-1.5 text-xs font-medium tracking-wide shadow-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF7F2]"
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Return to Map</span>
-            </button>
-          )}
-        </div>
-      </header>
-
-      {/* Stage A: Opening Aerial Overlay */}
-      {stage === 'aerial' && !isLoading && !loadError && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-10 md:bottom-14 z-30 flex flex-col items-center text-center px-6">
-          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.28em] text-[#F4B896] mb-2">
-            Rajasthan · Ten Fort Destinations
-          </p>
-          <h1 className="text-2xl md:text-4xl font-light tracking-wide text-[#FAF7F2] mb-4 max-w-xl">
-            From the Aravalli ridges to the Thar plains
-          </h1>
-          <button
-            type="button"
-            onClick={enterMap}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-[#FAF7F2] text-[#2A1B16] hover:bg-[#F4B896] px-5 py-2.5 text-xs md:text-sm font-semibold tracking-wider uppercase shadow-xl transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E06D53]"
-          >
-            <MapPin className="w-4 h-4 text-[#E06D53]" />
-            <span>Explore Chapter Map</span>
-          </button>
-        </div>
-      )}
-
-      {/* Active Chapter Info Bar (Map & Approach stages) */}
-      {stage !== 'aerial' && activeData && (
-        <aside className="pointer-events-none absolute bottom-4 inset-x-4 md:left-8 md:right-auto md:bottom-7 z-30 md:max-w-sm">
-          <div className="pointer-events-auto rounded-xl bg-[#181210]/86 backdrop-blur-md border border-[#FAF7F2]/16 p-4 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.24em] text-[#F4B896]">
-                  {activeData.title}
-                </p>
-                <h2 className="text-base md:text-lg font-medium text-[#FAF7F2] mt-0.5">
-                  {String(activeData.chapter).padStart(2, '0')} — {activeData.fort}
-                </h2>
-                <p className="text-[11px] text-[#FAF7F2]/65 mt-1">
-                  {activeData.latitude.toFixed(3)}°N, {activeData.longitude.toFixed(3)}°E ·{' '}
-                  {Math.round(activeData.elevation_dsm_m)} m DSM
-                </p>
-              </div>
-              {stage === 'map' ? (
-                <button
-                  type="button"
-                  onClick={() => selectAndApproach(activeData.chapter)}
-                  className="shrink-0 rounded-full bg-[#E06D53] hover:bg-[#d25d43] text-[#FAF7F2] px-3 py-1.5 text-[11px] font-medium tracking-wide transition"
-                >
-                  Approach
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={returnToMap}
-                  className="shrink-0 rounded-full bg-[#FAF7F2]/12 hover:bg-[#FAF7F2]/22 text-[#FAF7F2] px-3 py-1.5 text-[11px] font-medium tracking-wide transition"
-                >
-                  Map View
-                </button>
-              )}
+        {atlasVisible && (
+          <>
+            <div className="rw-map-title">
+              <h1 ref={mapHeadingRef} tabIndex={-1}>Rajasthan</h1>
+              <p>{available ? 'The chapter map' : 'Chapter index · Terrain unavailable'}</p>
             </div>
-          </div>
-        </aside>
-      )}
+            {available && marks.length === chapters.length && (
+              <div className="rw-markers">
+                <svg className="rw-leaders" aria-hidden="true">
+                  {marks.map((mark, i) => Math.hypot(mark.x - mark.anchorX, mark.y - mark.anchorY) > 8 && (
+                    <g key={chapters[i].chapter} data-active={selection?.chapter === chapters[i].chapter}>
+                      <line x1={mark.anchorX} y1={mark.anchorY} x2={mark.x} y2={mark.y} />
+                      <circle cx={mark.anchorX} cy={mark.anchorY} r="2.25" />
+                    </g>
+                  ))}
+                </svg>
+                {chapters.map((chapter, i) => (
+                  <button className="rw-marker" key={chapter.chapter} style={{ left: marks[i].x, top: marks[i].y }}
+                    aria-label={`Chapter ${number(chapter.chapter)}, ${chapter.fort}`}
+                    aria-pressed={selection?.chapter === chapter.chapter} onClick={(event) => select(chapter, event.detail === 0)}>
+                    <span className="rw-marker-number">{number(chapter.chapter)}</span>
+                  </button>
+                ))}
+                {selection && <span className="rw-marker-name" aria-hidden="true" style={{
+                  left: `clamp(90px, ${marks[selection.chapter - 1].x}px, calc(100% - 90px))`,
+                  top: marks[selection.chapter - 1].y - 18,
+                }}>{selection.fort}</span>}
+              </div>
+            )}
+            <section className="rw-dock" aria-label="Chapter selection">
+              <div className="rw-chapter">
+                {selection ? (
+                  <div aria-live="polite">
+                    <h2>{chapterName(selection.title)}</h2>
+                    <p>{selection.fort}</p>
+                  </div>
+                ) : (
+                  <div><h2>Ten forts, ten chapters</h2><p>Select a destination to begin.</p></div>
+                )}
+                {selection && <button ref={approachButtonRef} className="rw-link rw-approach" onClick={beginApproach}>
+                  Begin approach <ArrowRight size={16} />
+                </button>}
+              </div>
+              <nav className="rw-index" aria-label="Chapter order">
+                <div className="rw-index-caption">
+                  <span>Chapter index</span>
+                  {selection && <span>{number(selection.chapter)} / {chapters.length}</span>}
+                </div>
+                <ol>
+                  {chapters.map((chapter) => (
+                    <li key={chapter.chapter}>
+                      <button onClick={(event) => select(chapter, event.detail === 0)} aria-pressed={selection?.chapter === chapter.chapter}
+                        aria-label={`${number(chapter.chapter)} ${chapter.fort}, ${chapterName(chapter.title)}`}>
+                        {number(chapter.chapter)}
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            </section>
+          </>
+        )}
 
-      {/* Loading / Error State */}
-      {isLoading && (
-        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[#181210]/90">
-          <div className="w-8 h-8 rounded-full border-2 border-[#F4B896]/30 border-t-[#E06D53] animate-spin mb-3" />
-          <p className="text-xs uppercase tracking-[0.22em] text-[#FAF7F2]/80">
-            Loading Rajasthan Terrain
-          </p>
-        </div>
-      )}
-
-      {loadError && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#181210] p-6 text-center">
-          <div className="max-w-md rounded-xl border border-[#E06D53]/40 bg-[#2A1B16] p-6">
-            <p className="text-sm font-medium text-[#FAF7F2] mb-2">Terrain Preview Unavailable</p>
-            <p className="text-xs text-[#FAF7F2]/75">{loadError}</p>
-          </div>
-        </div>
-      )}
-    </div>
+        {travelling && available && <div className="rw-destination-pin" ref={destinationPinRef} aria-hidden="true"><span /></div>}
+        {travelling && selection && (
+          <section className="rw-arrival">
+            <button className="rw-link" onClick={returnToMap} disabled={journey === 'returning'}>
+              <ArrowLeft size={16} /> Return to map
+            </button>
+            <div className="rw-arrival-title">
+              <p>{chapterName(selection.title)}</p>
+              <h1 ref={thresholdRef} tabIndex={-1}>{selection.fort}</h1>
+              {journey === 'threshold' && <p role="status">{available ? 'At the threshold' : 'Terrain unavailable'}</p>}
+            </div>
+          </section>
+        )}
+      </div>
+    </main>
   );
-};
-
-export default RajasthanWorldPreview;
+}

@@ -4,16 +4,14 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-const RajasthanWorldPreview = lazy(() => import('./components/RajasthanWorldPreview'));
-
-const isRajasthanWorldPreview =
-  Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV) &&
-  typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).get('preview') === 'rajasthan-world';
+const RajasthanWorldPreview =
+  import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === 'rajasthan-world'
+    ? lazy(() => import('./components/RajasthanWorldPreview'))
+    : null;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {isRajasthanWorldPreview ? (
+    {RajasthanWorldPreview ? (
       <Suspense fallback={<div className="w-screen h-screen bg-[#181210]" />}>
         <RajasthanWorldPreview />
       </Suspense>
