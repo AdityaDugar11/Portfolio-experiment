@@ -1,0 +1,265 @@
+{
+  "poly_haven": {
+    "license": "CC0-1.0",
+    "license_url": "https://polyhaven.com/license",
+    "assets": {
+      "namaqualand_cliff_01": {
+        "page": "https://polyhaven.com/a/namaqualand_cliff_01",
+        "authors": {
+          "Jenelle van Heerden": "Photography",
+          "Rico Cilliers": "modeling"
+        },
+        "files": {
+          "namaqualand_cliff_01.gltf": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/namaqualand_cliff_01/namaqualand_cliff_01_2k.gltf",
+            "md5": "a12eefde080c0aa35059cc1f5eb10ebc"
+          },
+          "textures/namaqualand_cliff_01_arm_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/namaqualand_cliff_01/namaqualand_cliff_01_arm_2k.jpg",
+            "md5": "b775d0755c561a5b580e0c5b9ae71d10"
+          },
+          "namaqualand_cliff_01.bin": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/namaqualand_cliff_01/namaqualand_cliff_01.bin",
+            "md5": "2aa51d08780691ff8e748b308d575964"
+          },
+          "textures/namaqualand_cliff_01_diff_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/namaqualand_cliff_01/namaqualand_cliff_01_diff_2k.jpg",
+            "md5": "f2f977af4118c515ea87deca605706ce"
+          },
+          "textures/namaqualand_cliff_01_nor_gl_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/namaqualand_cliff_01/namaqualand_cliff_01_nor_gl_2k.jpg",
+            "md5": "f930f6de4058ae9ca480b7e08fd78849"
+          }
+        }
+      },
+      "namaqualand_cliff_02": {
+        "page": "https://polyhaven.com/a/namaqualand_cliff_02",
+        "authors": {
+          "Dario Barresi": "Photography",
+          "Rico Cilliers": "modeling"
+        },
+        "files": {
+          "namaqualand_cliff_02.gltf": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/namaqualand_cliff_02/namaqualand_cliff_02_2k.gltf",
+            "md5": "599ea12c5a126d7955bcd67a82407a76"
+          },
+          "textures/namaqualand_cliff_02_diff_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/namaqualand_cliff_02/namaqualand_cliff_02_diff_2k.jpg",
+            "md5": "45a8861aebda11935b29f1cedf6f800d"
+          },
+          "textures/namaqualand_cliff_02_nor_gl_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/namaqualand_cliff_02/namaqualand_cliff_02_nor_gl_2k.jpg",
+            "md5": "7412c300ddaff0613dade74d1b8760e7"
+          },
+          "textures/namaqualand_cliff_02_arm_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/namaqualand_cliff_02/namaqualand_cliff_02_arm_2k.jpg",
+            "md5": "b145f4a74a776f8e766411304ecbd2de"
+          },
+          "namaqualand_cliff_02.bin": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/namaqualand_cliff_02/namaqualand_cliff_02.bin",
+            "md5": "2920477744cce1a827a61c0d36a1061a"
+          }
+        }
+      },
+      "wild_rooibos_bush": {
+        "page": "https://polyhaven.com/a/wild_rooibos_bush",
+        "authors": {
+          "James Ray Cock": "modeling",
+          "Jenelle van Heerden": "photography"
+        },
+        "files": {
+          "wild_rooibos_bush.gltf": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/wild_rooibos_bush/wild_rooibos_bush_2k.gltf",
+            "md5": "72698fe321de65c3958cbc6d53bfe887"
+          },
+          "textures/wild_rooibos_bush_diff_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/wild_rooibos_bush/wild_rooibos_bush_diff_2k.jpg",
+            "md5": "620baee5986d736ab68603c4a2e938eb"
+          },
+          "textures/wild_rooibos_bush_arm_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/wild_rooibos_bush/wild_rooibos_bush_arm_2k.jpg",
+            "md5": "0934d20e828feefac3ca5accb3aca52f"
+          },
+          "textures/wild_rooibos_bush_nor_gl_2k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/wild_rooibos_bush/wild_rooibos_bush_nor_gl_2k.jpg",
+            "md5": "d03a229d64ce136e9bd1b8f723b41d6a"
+          },
+          "wild_rooibos_bush.bin": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/wild_rooibos_bush/wild_rooibos_bush.bin",
+            "md5": "0d6c39ac444bac0381ecdff32a191a9c"
+          },
+          "textures/Alpha.png": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/2k/wild_rooibos_bush/wild_rooibos_bush_alpha_2k.png",
+            "md5": "54f2820a6fce80d83ce013f57ce6421a"
+          }
+        }
+      },
+      "namaqualand_rocks_01": {
+        "page": "https://polyhaven.com/a/namaqualand_rocks_01",
+        "authors": {
+          "Greg Zaal": "Photography",
+          "Jenelle van Heerden": "modeling"
+        },
+        "files": {
+          "namaqualand_rocks_01.gltf": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/namaqualand_rocks_01/namaqualand_rocks_01_1k.gltf",
+            "md5": "0426d6445f947a872f67dffba7ab5dbd"
+          },
+          "textures/namaqualand_rocks_01_diff_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_rocks_01/namaqualand_rocks_01_diff_1k.jpg",
+            "md5": "3b0bb3ffafa585b8e85565f2debb2dd1"
+          },
+          "textures/namaqualand_rocks_01_arm_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_rocks_01/namaqualand_rocks_01_arm_1k.jpg",
+            "md5": "ffeb3aba0ebf19f325fc4ec4cc9ae5c2"
+          },
+          "namaqualand_rocks_01.bin": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/namaqualand_rocks_01/namaqualand_rocks_01.bin",
+            "md5": "26f7ff48dc3d03e0c3f98b0a3d2c1b72"
+          },
+          "textures/namaqualand_rocks_01_nor_gl_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_rocks_01/namaqualand_rocks_01_nor_gl_1k.jpg",
+            "md5": "46c9238b7d2cbcbc7bbf417a7ffd6e56"
+          }
+        }
+      },
+      "sandy_gravel_02": {
+        "page": "https://polyhaven.com/a/sandy_gravel_02",
+        "authors": {
+          "Dario Barresi": "All"
+        },
+        "files": {
+          "Diffuse.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sandy_gravel_02/sandy_gravel_02_diff_1k.jpg",
+            "md5": "e8f0496f1e0e923514470171de033bf9"
+          },
+          "nor_gl.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sandy_gravel_02/sandy_gravel_02_nor_gl_1k.jpg",
+            "md5": "a0174cc069d02b825b546d8547b4a49a"
+          },
+          "Rough.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sandy_gravel_02/sandy_gravel_02_rough_1k.jpg",
+            "md5": "bbd5bd1358d0a3f7dbdee52707c126c1"
+          }
+        }
+      },
+      "sand_03": {
+        "page": "https://polyhaven.com/a/sand_03",
+        "authors": {
+          "Charlotte Baglioni": "All"
+        },
+        "files": {
+          "Diffuse.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sand_03/sand_03_diff_1k.jpg",
+            "md5": "84bde2b8bea6351805f67a15682b36b2"
+          },
+          "nor_gl.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sand_03/sand_03_nor_gl_1k.jpg",
+            "md5": "ad8d6ce28344b1d8f241cbd7796243dc"
+          },
+          "Rough.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/sand_03/sand_03_rough_1k.jpg",
+            "md5": "b09beddb9981ec5fb402c12f04751c15"
+          }
+        }
+      },
+      "namaqualand_boulders_01": {
+        "page": "https://polyhaven.com/a/namaqualand_boulders_01",
+        "authors": {
+          "Greg Zaal": "Photography",
+          "Jenelle van Heerden": "modeling"
+        },
+        "files": {
+          "namaqualand_boulders_01.gltf": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/namaqualand_boulders_01/namaqualand_boulders_01_1k.gltf",
+            "md5": "904c7349856f65f757b7f6fd36f57641"
+          },
+          "textures/namaqualand_boulders_01_diff_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_boulders_01/namaqualand_boulders_01_diff_1k.jpg",
+            "md5": "1ed791727bbb6f26f77246e5de17d901"
+          },
+          "textures/namaqualand_boulders_01_nor_gl_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_boulders_01/namaqualand_boulders_01_nor_gl_1k.jpg",
+            "md5": "0f3ad6c29c72b9fe28fc91dc3cf15c00"
+          },
+          "namaqualand_boulders_01.bin": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/namaqualand_boulders_01/namaqualand_boulders_01.bin",
+            "md5": "58ed8a29120ad0807320ce49a9d14c2a"
+          },
+          "textures/namaqualand_boulders_01_arm_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_boulders_01/namaqualand_boulders_01_arm_1k.jpg",
+            "md5": "9827ad42f724de4fc327b063878939d6"
+          }
+        }
+      },
+      "namaqualand_boulder_03": {
+        "page": "https://polyhaven.com/a/namaqualand_boulder_03",
+        "authors": {
+          "Jenelle van Heerden": "modeling",
+          "Dario Barresi": "Photography"
+        },
+        "files": {
+          "namaqualand_boulder_03.gltf": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/namaqualand_boulder_03/namaqualand_boulder_03_1k.gltf",
+            "md5": "419d98b4512f1bc06245555c84f6effc"
+          },
+          "textures/namaqualand_boulder_03_diff_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_boulder_03/namaqualand_boulder_03_diff_1k.jpg",
+            "md5": "d025cdf2d90fe94cbc2ae5a9784e7a03"
+          },
+          "textures/namaqualand_boulder_03_nor_gl_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_boulder_03/namaqualand_boulder_03_nor_gl_1k.jpg",
+            "md5": "d2d2c1459c74ae308eb895178e4757ed"
+          },
+          "namaqualand_boulder_03.bin": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/namaqualand_boulder_03/namaqualand_boulder_03.bin",
+            "md5": "ded61ea310a66144546eac2a891b6dba"
+          },
+          "textures/namaqualand_boulder_03_arm_1k.jpg": {
+            "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/namaqualand_boulder_03/namaqualand_boulder_03_arm_1k.jpg",
+            "md5": "d474b780658e7038da53b4328725b4f1"
+          }
+        }
+      }
+    }
+  },
+  "ambient_cg": {
+    "asset": "Ground097",
+    "author": "ambientCG",
+    "page": "https://ambientcg.com/view?id=Ground097",
+    "license": "CC0-1.0",
+    "license_url": "https://docs.ambientcg.com/license/",
+    "zip": "Ground097_1K-JPG.zip",
+    "url": "https://ambientcg.com/get?file=Ground097_1K-JPG.zip",
+    "sha256": "b6908bd2d3f15249fbbdfd2be43d0df57b924ff130ec83e0121a2b30921141a6",
+    "maps": [
+      "Ground097_1K-JPG_Color.jpg",
+      "Ground097_1K-JPG_Displacement.jpg"
+    ]
+  },
+  "usgs_3dep": {
+    "file": "data/white-sands-3dep.tif",
+    "project": "NM_WhiteSandsNM_2020_D20",
+    "license": "Public domain",
+    "source": "https://catalog.data.gov/dataset/1-3rd-arc-second-digital-elevation-models-dems-usgs-national-map-3dep-downloadable-data-co",
+    "report": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/NM_WhiteSandsNM_2020_D20/vertical_accuracy/contractor_provided/19095_Project%20Report.pdf",
+    "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage",
+    "parameters": {
+      "bbox": "381100,3628500,381420,3629460",
+      "bboxSR": "26913",
+      "imageSR": "26913",
+      "size": "320,960",
+      "format": "tiff",
+      "pixelType": "F32",
+      "interpolation": "RSP_BilinearInterpolation",
+      "f": "image"
+    },
+    "sha256": "a7af663fc9bf3e43df44d8a0f3f5d78f870cefa0afa93bb7be70bce0fa6a4141"
+  },
+  "pavilion": {
+    "file": "../blender/junagarh-exterior-v01.blend",
+    "object": "Rooftop belvedere 00",
+    "geometry": "Project-authored architectural interpretation, new plinth",
+    "texture_provenance": "../research/junagarh/materials/inventory.json"
+  }
+}
