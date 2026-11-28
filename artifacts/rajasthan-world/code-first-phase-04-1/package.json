@@ -1,0 +1,15 @@
+{
+  "name": "junagarh-phase-04-1",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.mts",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepare:cinematic": "node prepare-cinematic.mjs",
+    "hyperframes": "hyperframes"
+  },
+  "devDependencies": {
+    "hyperframes": "0.9.104"
+  }
+}

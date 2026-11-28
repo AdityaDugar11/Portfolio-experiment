@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="icon" href="data:,">
+    <title>Suraj Pol | Camera and door study</title>
+    <style>
+      html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; background: #272219; }
+      #suraj-pol, canvas { display: block; width: 1280px; height: 720px; }
+    </style>
+    <script>
+      window.__hf ??= {};
+      window.__hf.buildReady ??= {};
+      window.__timelines = window.__timelines || {};
+      const mountPoint = new Promise((resolve) => {
+        document.addEventListener('DOMContentLoaded', () => resolve(document.querySelector('#suraj-pol')), { once: true });
+      });
+      window.__hf.buildReady.junagarh = Promise.all([mountPoint, import('./assets/scene.js')])
+        .then(([root, scene]) => scene.mountCinematic(root))
+        .then(({ timeline }) => { window.__timelines['suraj-pol'] = timeline; });
+    </script>
+  </head>
+  <body>
+    <main id="suraj-pol" data-composition-id="suraj-pol" data-width="1280" data-height="720" data-duration="12" data-fps="24">
+      <canvas data-layout-allow-overflow aria-label="Suraj Pol gateway camera study"></canvas>
+    </main>
+  </body>
+</html>
