@@ -102,9 +102,9 @@ def height(x,y):
     return (grid[j,i]*(1-fx)+grid[j,i+1]*fx)*(1-fy)+(grid[j+1,i]*(1-fx)+grid[j+1,i+1]*fx)*fy
 
 soil=material("Ground · sand, dry soil, forest litter and exposed ribs",(.34,.22,.1))
-textured(soil,1.08,.26,(.55,.56,.48),(1,.99,.89),"Biome pigments",(1.25,.73,1.25))
-rock=material("Escarpment · bedded ferruginous sandstone",(.36,.21,.11))
-textured(rock,.48,.87,(.132,.073,.037),(.51,.326,.160),stretch=(.6,.72,2.8))
+textured(soil,1.08,.24,(.55,.56,.48),(1,.99,.89),"Biome pigments",(1.25,.73,1.25))
+rock=material("Escarpment · bedded ferruginous sandstone",(.38,.23,.12))
+textured(rock,.38,.55,(.155,.087,.045),(.54,.345,.170),stretch=(.55,.68,2.4))
 base=material("Underside · raw stone",(.185,.099,.045))
 
 top=a["top"]; tri=a["tris"]; ring=a["ring"]; edge=top[ring]; count=len(ring)
@@ -387,18 +387,19 @@ mesh("Continuous studio sweep",[(-9000,-9000,-15.3),(9000,-9000,-15.3),(9000,900
 
 world=bpy.data.worlds.new("Soft skylight");world.use_nodes=True;scene.world=world
 bg=world.node_tree.nodes.get("Background")
-bg.inputs["Color"].default_value=(.80,.865,1,1);bg.inputs["Strength"].default_value=.35
+bg.inputs["Color"].default_value=(.84,.875,1,1);bg.inputs["Strength"].default_value=.28
 def light(name,kind,position,energy,color,size):
     data=bpy.data.lights.new(name,kind);data.energy=energy;data.color=color
     obj=bpy.data.objects.new(name,data);studio.objects.link(obj);obj.location=position
     obj.rotation_euler=(-Vector(position)).to_track_quat('-Z','Y').to_euler()
     if kind=="SUN":data.angle=math.radians(size)
     else:data.shape='DISK';data.size=size
-light("Sun · raking across the dune crests","SUN",(-490,-290,450),2.65,(1,.858,.685),6)
-light("Softbox · cool frontal fill","AREA",(90,-350,490),780000,(.80,.88,1),630)
-light("Softbox · warm edge","AREA",(290,360,410),1900000,(1,.90,.74),440)
-scene.render.engine="CYCLES";scene.cycles.samples=32
-scene.cycles.use_denoising=True;scene.cycles.max_bounces=5;scene.cycles.diffuse_bounces=3
+# Low raking sun from the west-southwest to cast long shadows across the dunes.
+light("Sun · raking golden hour from WSW","SUN",(-620,-180,280),3.10,(1,.875,.680),5)
+light("Softbox · cool atmospheric fill","AREA",(90,-350,490),650000,(.82,.90,1),630)
+light("Softbox · warm edge highlight","AREA",(290,360,410),1600000,(1,.92,.76),440)
+scene.render.engine="CYCLES";scene.cycles.samples=48
+scene.cycles.use_denoising=True;scene.cycles.max_bounces=6;scene.cycles.diffuse_bounces=4
 scene.cycles.transparent_max_bounces=3
 scene.render.resolution_x=1800;scene.render.resolution_y=1200;scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG";scene.render.image_settings.color_mode="RGB"
@@ -411,8 +412,8 @@ def camera(name,target,offset,lens):
 cams=[
     camera("01-overview",(-15,-12,8),(45,-1225,1180),58),
     camera("02-alternate",(-15,15,6),(-945,-870,770),47),
-    camera("03-desert",(-306,41,7),(-28,-131,78),47),
-    camera("04-mountains",(-40,-139,37),(20,-176,124),51),
+    camera("03-desert",(-290,55,8),(-18,-108,65),44),
+    camera("04-mountains",(-55,-120,30),(90,-220,165),48),
 ]
 scene.camera=cams[0]
 for i,cam in enumerate(cams,1):

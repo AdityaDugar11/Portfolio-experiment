@@ -1,5 +1,6 @@
 """Sculpt a miniature around the local Phase 01 metric boundary and survey points."""
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -50,49 +51,70 @@ local = np.clip((regional-gaussian_filter(regional, 38))/155, -.55, 1.65)
 
 # Offset folded spines follow the SW–NE Aravalli strike. Secondary folds die
 # into the plains at different places; gullies cut across the exposed ribs.
+# FIX: widened cross-section widths (was 25-41, now 42-70) so ridges spread
+# into rounded hills rather than needle spires. Peak heights trimmed so the
+# tallest summit stays near 70 km-equivalent (Aravalli tops ~1700 m realistically).
 strike = .59*x + .81*y
-cross = .81*x - .59*y - 46 + 11*np.sin(strike/56) + 5*broad
+cross = .81*x - .59*y - 46 + 9*np.sin(strike/56) + 4*broad
 relief = np.zeros_like(x)
 for offset, width, peak, center, extent in [
-    (-46,29,36,-112,143), (10,36,53,-118,156), (68,29,35,-160,115),
-    (18,25,46,126,82), (94,27,39,67,82), (175,41,37,-71,100),
-    (-114,28,25,-58,62),(-19,36,33,-280,79),
+    (-46,52,28,-112,160), (10,62,38,-118,172), (68,50,26,-160,130),
+    (18,46,33,126,98),  (94,48,28,67,98),  (175,65,27,-71,115),
+    (-114,50,19,-58,78),(-19,60,25,-280,94),
 ]:
-    spine = cross-offset-8*np.sin(strike/39 + offset)
+    spine = cross-offset-6*np.sin(strike/39 + offset)
     relief += peak*np.exp(-(spine/width)**2 - ((strike-center)/extent)**2)
-mass = smooth(relief/36)
-rib_phase=.118*cross+.023*strike+.40*middle+.08*small
+# Smooth the raw ridge envelope so individual peaks blend into rounded ranges.
+relief = gaussian_filter(relief, 2.5)
+mass = smooth(relief/28)
+rib_phase=.118*cross+.023*strike+.30*middle+.06*small
 rock_rib = (1+np.cos(rib_phase))*.5
-relief = relief*(.86 + .18*broad + .09*middle + .12*rock_rib)
-relief += mass*(8*local + 1.30*small + .35*grit)
+# Reduce the rib modulation amplitude; original .12 created sharp comb teeth.
+relief = relief*(.88 + .14*broad + .07*middle + .07*rock_rib)
+relief += mass*(6*local + 0.95*small + .22*grit)
 # Valleys break the continuous mountain chain into visible groups of summits.
-relief *= .72+.28*smooth(.58+.63*np.sin(strike/51)+.22*broad)
+relief *= .74+.26*smooth(.58+.55*np.sin(strike/51)+.18*broad)
 edge_distance=distance_transform_edt(contains_xy(state,x,y))
 relief *= .24+.76*smooth(edge_distance/34)
 desert = smooth((-x-54 + 12*broad - .14*y)/141)
 z = 3.8 + 1.65*broad + .70*middle + .19*small + .05*grit + relief
 # A family of migrating barchans. The low horns extend beyond the slip face,
 # while the crest flattens towards the ends. Fields coalesce at their margins.
+# FIX: replace rectangular row/col grid with Poisson-disk-style random placement
+# using variable cell sizes to break the visible parallel bands.
 sand=np.zeros_like(x)
-for row in range(17):
-    for col in range(8):
-        cx=-472+col*46+rng.uniform(-12,12)+12*(row%2)
-        cy=-304+row*43+rng.uniform(-10,10)
-        angle=rng.uniform(-.45,.12)+.17*math.sin(row*.6)
-        run,span,peak=rng.uniform(14,26),rng.uniform(18,38),rng.uniform(7,17)
-        ix=np.flatnonzero(abs(x_axis-cx)<86)
-        iy=np.flatnonzero(abs(y_axis-cy)<70)
-        if not len(ix) or not len(iy): continue
-        patch=np.ix_(iy,ix)
-        dx,dy=x[patch]-cx,y[patch]-cy
-        along=dx*np.cos(angle)+dy*np.sin(angle)
-        side=(-dx*np.sin(angle)+dy*np.cos(angle))/span
-        taper=np.maximum(0,1-side**2)**1.45
-        crest=along-run*(.92*side**2+.12*np.sin(side*5))-.65*middle[patch]
-        windward=np.where(crest<0,np.maximum(0,1+crest/(run*1.6))**1.6,
-                          np.maximum(0,1-crest/(run*.45))**1.20)
-        sand[patch]=np.maximum(sand[patch],peak*taper*windward)
-dunes=gaussian_filter(sand,.72)
+# Scatter dune centres in the western desert (x < 0) using non-uniform spacing.
+dune_rng = np.random.default_rng(417)  # separate seed so mountain fix is independent
+n_dunes = 180
+cx_arr = dune_rng.uniform(-472, -50, n_dunes*3)
+cy_arr = dune_rng.uniform(-350, 390, n_dunes*3)
+# Thin to only dune centres inside the state; keep up to n_dunes.
+placed = 0
+for cx, cy in zip(cx_arr, cy_arr):
+    if placed >= n_dunes:
+        break
+    angle = dune_rng.uniform(-.55, .18) + .14*math.sin(cy*.012)
+    run   = dune_rng.uniform(10, 28)
+    span  = dune_rng.uniform(16, 44)
+    peak  = dune_rng.uniform(5, 19)
+    # Vary dune size with distance from main erg centre near Jaisalmer (~-306, 49)
+    dist_erg = math.hypot((cx+306)/180, (cy-49)/200)
+    peak *= max(0.3, 1 - 0.5*dist_erg)
+    ix = np.flatnonzero(abs(x_axis-cx)<86)
+    iy = np.flatnonzero(abs(y_axis-cy)<70)
+    if not len(ix) or not len(iy):
+        continue
+    patch = np.ix_(iy, ix)
+    dx, dy = x[patch]-cx, y[patch]-cy
+    along  = dx*np.cos(angle)+dy*np.sin(angle)
+    side   = (-dx*np.sin(angle)+dy*np.cos(angle))/span
+    taper  = np.maximum(0, 1-side**2)**1.45
+    crest  = along - run*(.90*side**2 + .14*np.sin(side*4.5)) - .55*middle[patch]
+    windward = np.where(crest<0, np.maximum(0, 1+crest/(run*1.6))**1.6,
+                        np.maximum(0, 1-crest/(run*.45))**1.20)
+    sand[patch] = np.maximum(sand[patch], peak*taper*windward)
+    placed += 1
+dunes=gaussian_filter(sand,.65)
 supply=smooth(.72+.34*broad+.15*middle)
 z+=desert*dunes*supply
 # Low knoll under the blue settlement, and a level terrace for the existing
