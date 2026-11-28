@@ -4,7 +4,7 @@ import {
 } from 'three';
 
 const SOURCE_DISTANCE = 2.65;
-const DOLLY_DISTANCE = 0.53;
+const DOLLY_DISTANCE = 0.82;
 const RELIEF = 0.84;
 
 export type CinematicFrame = {
@@ -97,14 +97,16 @@ export function createCinematicScene(
       }
       const distance = SOURCE_DISTANCE - DOLLY_DISTANCE * travel;
       const pinScale = imageHeight * distance / (distance - anchor.z);
-      camera.position.set(
-        anchor.x - (markerX - width / 2) / pinScale,
-        anchor.y + (markerY - height / 2) / pinScale,
-        distance,
-      );
-      camera.aspect = width / height;
+      const aimX = anchor.x - (markerX - width / 2) / pinScale;
+      const aimY = anchor.y + (markerY - height / 2) / pinScale;
+      const lateralTravel = 0.65 * travel;
+      camera.position.set(aimX * lateralTravel, aimY * lateralTravel, distance);
       camera.fov = fieldOfView(height / imageHeight, distance);
-      camera.updateProjectionMatrix();
+      // A lens shift holds the pin while limiting the lateral baseline across thin rooflines.
+      camera.setViewOffset(
+        width, height, (aimX - camera.position.x) * pinScale, (camera.position.y - aimY) * pinScale,
+        width, height,
+      );
       renderer.render(scene, camera);
     },
     dispose() {

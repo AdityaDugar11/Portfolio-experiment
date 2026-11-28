@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-11-28T06:52:42.687Z",
+        "reason": "Repository owner protects existing Page 01 typography. Git shows this global font predates Phase 02.3."
+      }
+    ]
+  }
+}

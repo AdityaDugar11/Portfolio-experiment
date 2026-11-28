@@ -267,19 +267,19 @@ def verify_inputs(browser, url):
 def camera_sweep(browser, url):
     report = []
     for label, size, mobile in [('desktop', DESKTOP, False), ('mobile', MOBILE, True)]:
-        for dolly in [0.53, .75, .95, 1.15, 1.40, 1.65, 1.90]:
+        for dolly in [0.53, 0.82, 1.05, 1.30, 1.55, 1.75, 1.95]:
             with context(browser, size, mobile) as world:
                 page = world.new_page()
 
                 def replace_scene(route):
                     response = route.fetch()
                     body = response.text()
-                    assert 'const DOLLY_DISTANCE = 0.53;' in body
+                    assert 'const DOLLY_DISTANCE = 0.82;' in body
                     original = 'renderer.render(scene, camera);'
                     assert original in body
                     instrumented = original + """window.cameraAudit = {position: camera.position.toArray(), fov: camera.fov,
-                      aspect: camera.aspect, anchor: anchor.toArray()};"""
-                    body = body.replace('const DOLLY_DISTANCE = 0.53;', f'const DOLLY_DISTANCE = {dolly};')
+                      view: camera.view, anchor: anchor.toArray()};"""
+                    body = body.replace('const DOLLY_DISTANCE = 0.82;', f'const DOLLY_DISTANCE = {dolly};')
                     body = body.replace(original, instrumented)
                     route.fulfill(response=response, body=body)
 
@@ -334,6 +334,13 @@ def main():
         for label, size, mobile in [('desktop', DESKTOP, False), ('mobile', MOBILE, True)]:
             record(browser, args.url, label, size, mobile)
             results['checks'].append(f'{label} native forward and reverse scroll recording')
+        with context(browser, DESKTOP) as world:
+            page = world.new_page()
+            page.goto(args.url.replace('rajasthan-cinematic', 'rajasthan-world'), wait_until='domcontentloaded')
+            page.get_by_role('button', name='Go to chapter map').wait_for()
+            assert not page.locator('.rc-runway').count()
+            assert not page.evaluate(TRANSFER)['scene']
+        results['checks'].append('Phase 02.2 still opens through its separate preview query')
         with context(browser, DESKTOP) as world:
             page = world.new_page()
             page.goto(args.production_url, wait_until='domcontentloaded')

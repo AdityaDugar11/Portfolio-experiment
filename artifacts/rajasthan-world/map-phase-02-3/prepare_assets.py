@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import gaussian_filter, gaussian_filter1d
 import torch
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 
@@ -54,6 +54,8 @@ def main():
     depth = depth.cpu().numpy()
     low, high = np.percentile(depth, [1, 99])
     depth = np.clip((depth - low) / (high - low), 0, 1)
+    # Keep terrain-scale relief while softening estimated depth steps along roofs and ridges.
+    depth = gaussian_filter(depth, sigma=12)
     depth = np.pad(depth, PAD, mode='edge')
     depth_image = Image.fromarray(depth.astype('float32')).resize((432, 304), Image.Resampling.BILINEAR)
     depth_image = Image.fromarray(np.rint(np.clip(np.asarray(depth_image), 0, 1) * 255).astype('uint8'))
