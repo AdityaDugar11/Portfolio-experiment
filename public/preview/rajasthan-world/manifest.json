@@ -1,0 +1,159 @@
+{
+  "crs": "+proj=lcc +lat_1=24 +lat_2=29.5 +lat_0=26.5 +lon_0=74 +datum=WGS84 +units=m +no_defs",
+  "axes": "Three.js / glTF Y-up: X east, Y up, Z south (-north). 1 unit = 1 km.",
+  "vertical_exaggeration": 3.2,
+  "raster_bounds_km": [
+    -500.0,
+    -410.0,
+    505.0,
+    492.5
+  ],
+  "mewar_bounds_km": [
+    -125.0,
+    -240.0,
+    2.5,
+    -88.75
+  ],
+  "geometry": {
+    "overview": {
+      "vertices": 36562,
+      "triangles": 62676
+    },
+    "mewar_detail": {
+      "vertices": 34542,
+      "triangles": 68340
+    }
+  },
+  "chapters": [
+    {
+      "chapter": 1,
+      "fort": "Junagarh Fort",
+      "title": "THE BEGINNING",
+      "latitude": 28.02201,
+      "longitude": 73.31772,
+      "elevation_dsm_m": 227.59,
+      "world_xyz_km": [
+        -67.0357,
+        0.7283,
+        -168.6482
+      ]
+    },
+    {
+      "chapter": 2,
+      "fort": "Mehrangarh Fort",
+      "title": "BEYOND THE INTERFACE",
+      "latitude": 26.298055555556,
+      "longitude": 73.018888888889,
+      "elevation_dsm_m": 320.82,
+      "world_xyz_km": [
+        -97.8674,
+        1.0266,
+        21.9718
+      ]
+    },
+    {
+      "chapter": 3,
+      "fort": "Kumbhalgarh Fort",
+      "title": "THE LEARNING CURVE",
+      "latitude": 25.14916667,
+      "longitude": 73.58111111,
+      "elevation_dsm_m": 1025.62,
+      "world_xyz_km": [
+        -42.2037,
+        3.282,
+        149.4349
+      ]
+    },
+    {
+      "chapter": 4,
+      "fort": "Amber Fort",
+      "title": "WHAT DRAWS MY ATTENTION",
+      "latitude": 26.9859,
+      "longitude": 75.8507,
+      "elevation_dsm_m": 459.42,
+      "world_xyz_km": [
+        183.4984,
+        1.4701,
+        -55.1104
+      ]
+    },
+    {
+      "chapter": 5,
+      "fort": "Chittorgarh Fort",
+      "title": "HOW I TURN IDEAS INTO SYSTEMS",
+      "latitude": 24.88722222,
+      "longitude": 74.64694444,
+      "elevation_dsm_m": 532.2,
+      "world_xyz_km": [
+        65.328,
+        1.703,
+        178.3347
+      ]
+    },
+    {
+      "chapter": 6,
+      "fort": "Jaisalmer Fort",
+      "title": "THE WORK I CHOOSE TO SHOW",
+      "latitude": 26.9127,
+      "longitude": 70.9126,
+      "elevation_dsm_m": 263.85,
+      "world_xyz_km": [
+        -306.2955,
+        0.8443,
+        -49.3905
+      ]
+    },
+    {
+      "chapter": 7,
+      "fort": "Gagron Fort",
+      "title": "ENGINEERING WITH OTHERS",
+      "latitude": 24.628,
+      "longitude": 76.183,
+      "elevation_dsm_m": 311.15,
+      "world_xyz_km": [
+        220.9202,
+        0.9957,
+        205.3041
+      ]
+    },
+    {
+      "chapter": 8,
+      "fort": "Ranthambore Fort",
+      "title": "THE EXPERIMENTAL LAB",
+      "latitude": 26.020378055555554,
+      "longitude": 76.45499694444445,
+      "elevation_dsm_m": 455.87,
+      "world_xyz_km": [
+        245.4699,
+        1.4588,
+        50.7115
+      ]
+    },
+    {
+      "chapter": 9,
+      "fort": "Taragarh Fort, Bundi",
+      "title": "STILL BECOMING",
+      "latitude": 25.450752,
+      "longitude": 75.637379,
+      "elevation_dsm_m": 424.06,
+      "world_xyz_km": [
+        164.5349,
+        1.357,
+        115.0644
+      ]
+    },
+    {
+      "chapter": 10,
+      "fort": "Nahargarh Fort",
+      "title": "THE NEXT CONNECTION",
+      "latitude": 26.9375,
+      "longitude": 75.81583333333333,
+      "elevation_dsm_m": 559.37,
+      "world_xyz_km": [
+        180.118,
+        1.79,
+        -49.7044
+      ]
+    }
+  ]
+}

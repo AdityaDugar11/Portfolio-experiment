@@ -26,3 +26,6 @@ Thumbs.db
 
 __pycache__/
 *.pyc
+
+# Local Blender terrain source
+/artifacts/rajasthan-world/map-phase-01/rajasthan-terrain-map.blend
