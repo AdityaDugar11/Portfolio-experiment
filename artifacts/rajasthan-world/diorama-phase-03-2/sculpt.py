@@ -101,7 +101,7 @@ desert = smooth((-x-40 + 16*broad - .08*y)/152) * (1-.50*smooth((relief-7)/16))
 z = 4.4 + (1-.59*desert)*(1.9*broad + .80*middle + .19*small) + .04*grit + relief
 
 # Six sediment bodies interrupt one another with open interdune corridors.
-# A rotated exclusion ellipse enforces the separation in wind coordinates.
+# An exclusion ellipse enforces spacing along the prevailing wind and across it.
 fields = [
     (-351,43,70,72,18, .03), (-283,83,71,82,16,-.17),
     (-316,-57,68,78,16, .31), (-236,-137,74,80,12,-.27),
